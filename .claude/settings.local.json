@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(where pdftoppm *)",
+      "Bash(where pdftotext *)",
+      "Bash(pdftotext -layout \"C:\\\\Users\\\\devekumar\\\\Downloads\\\\Pitch_TX_ 2026.pdf\" \"C:\\\\Users\\\\DEVEKU~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-devekumar-Downloads-digital-twin-demo-source\\\\f49f3fde-15c0-4906-abd6-91beb81e4b52\\\\scratchpad\\\\pitch.txt\")",
+      "Bash(ls /mingw64/bin/ | grep -i pdf; echo \"---\"; ls /mingw64/bin/ | grep -i poppler)",
+      "Bash(python -c \"import fitz; print\\('fitz ok'\\)\")",
+      "Bash(python -c \"import pdf2image; print\\('pdf2image ok'\\)\")",
+      "Bash(pip list *)",
+      "Bash(python -c ' *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\devekumar\\\\Downloads\\\\digital_twin_demo_source\\\\public\\\\team\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\devekumar\\\\Downloads\\\\digital_twin_demo_source\\\\public\\\\products\")",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

@@ -1,0 +1,582 @@
+:root {
+  /* Presentation chrome (nav bar, intro/products/team slides) and the
+     digital twin's own floating glass controls now read the same dark,
+     rich palette — one premium surface for the whole deck instead of a
+     light shell wrapped around a dark 3D view. */
+  --bg: #050608;
+  --bg-2: #0c0e11;
+  --panel-bg: #181c22;
+  --panel-border: rgba(255, 255, 255, 0.13);
+  --card-bg: #1e232b;
+  --text: #ffffff;
+  --text-dim: #b7bfc9;
+  --accent: #ff8a3d;
+  --accent-soft: rgba(255, 138, 61, 0.18);
+  --green: #3ee88a;
+  --green-soft: rgba(62, 232, 138, 0.18);
+  --amber: #d99a3d;
+  --tx-orange: #ff8a3d;
+  --tx-green: #3ee88a;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+html,
+body,
+#root {
+  width: 100vw;
+  margin: 0;
+  height: 100vh;
+  height: 100dvh; /* accounts for mobile browser chrome so nothing overflows */
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.canvas-wrap {
+  flex: 1;
+  height: 100%;
+  position: relative; /* anchors the view toggle over the canvas */
+  /* A flex item's default min-width is its min-content size, which here is
+     the <canvas> element's own pixel width. Once the panel collapsed and
+     the canvas grew to fill the row, that floor grew with it and the panel
+     could never take its width back — it reopened as a 40px sliver. */
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Exterior/Cutaway switch, floating over the render. A sliding pill does
+   the movement so the two labels stay put and only the highlight travels —
+   reads as one control rather than two competing buttons. */
+.view-toggle {
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  padding: 0.28rem;
+  border-radius: 999px;
+  background: rgba(16, 19, 24, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+}
+
+.view-option {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0.45rem 1.35rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(233, 239, 246, 0.55);
+  transition: color 0.35s ease;
+}
+
+.view-option.active {
+  color: #0f1216;
+}
+
+.view-thumb {
+  position: absolute;
+  top: 0.28rem;
+  left: 0.28rem;
+  width: calc(50% - 0.28rem);
+  height: calc(100% - 0.56rem);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f2f6fa, #cfd9e4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  /* slight overshoot, matching the easing of the camera move in 3D */
+  transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.view-thumb.right {
+  transform: translateX(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-thumb {
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+  }
+}
+
+/* ---- guided walkthrough ---------------------------------------------- */
+
+/* The overlay never swallows pointer input as a whole — only its actual
+   controls do — so the model stays draggable underneath it. */
+.tour {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tour button {
+  pointer-events: auto;
+}
+
+/* Stage rail down the left edge */
+.tour-rail {
+  position: absolute;
+  top: 50%;
+  left: 1.6rem;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-step {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.34rem 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(226, 235, 244, 0.32);
+  transition: color 0.4s ease;
+}
+
+.tour-step:hover,
+.tour-step.current {
+  color: rgba(236, 243, 250, 0.95);
+}
+
+.tour-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  flex: none;
+  transition:
+    background-color 0.4s ease,
+    box-shadow 0.4s ease,
+    transform 0.4s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.tour-step.done .tour-step-dot {
+  background: rgba(226, 235, 244, 0.4);
+}
+
+.tour-step.current .tour-step-dot {
+  background: var(--accent, #6ee7ff);
+  border-color: var(--accent, #6ee7ff);
+  transform: scale(1.35);
+  box-shadow: 0 0 0 5px rgba(110, 231, 255, 0.14);
+}
+
+/* Labels stay hidden until the rail is hovered, so thedefault state is just a
+   row of quiet dots rather than a menu competing with the model. */
+.tour-step-label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.tour-rail:hover .tour-step-label,
+.tour-step.current .tour-step-label {
+  opacity: 1;
+  transform: none;
+}
+
+/* Caption card, bottom left */
+.tour-card {
+  position: absolute;
+  left: 1.6rem;
+  bottom: 1.6rem;
+  width: min(30rem, calc(100% - 3.2rem));
+  padding: 1.15rem 1.3rem 1.1rem;
+  border-radius: 16px;
+  background: rgba(14, 17, 22, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  animation: tour-card-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tour-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.tour-index {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--accent, #6ee7ff);
+}
+
+.tour-index-total {
+  color: rgba(226, 235, 244, 0.34);
+}
+
+.tour-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.32rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tour-blurb {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: rgba(226, 235, 244, 0.68);
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tour-nav {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.tour-nav:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tour-nav:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.tour-nav.primary {
+  background: #eef4fa;
+  border-color: transparent;
+  color: #0f1216;
+  font-weight: 600;
+}
+
+.tour-nav.primary:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.tour-exit {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  background: none;
+  color: rgba(226, 235, 244, 0.45);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.tour-exit:hover {
+  color: rgba(236, 243, 250, 0.9);
+}
+
+.tour-resume {
+  position: absolute;
+  left: 1.6rem;
+  bottom: 1.6rem;
+  z-index: 4;
+  appearance: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(14, 17, 22, 0.66);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* Scroll affordance */
+.tour-hint {
+  position: absolute;
+  right: 1.8rem;
+  bottom: 1.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 235, 244, 0.4);
+  animation: tour-card-in 0.9s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tour-hint-wheel {
+  width: 18px;
+  height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  position: relative;
+}
+
+.tour-hint-wheel::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 2px;
+  height: 5px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: currentColor;
+  animation: tour-wheel 1.8s ease-in-out infinite;
+}
+
+@keyframes tour-wheel {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(9px);
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-card,
+  .tour-hint {
+    animation: none;
+  }
+  .tour-hint-wheel::after {
+    animation: none;
+  }
+}
+
+/* ---- 3D unavailable fallback ---------------------------------------------- */
+
+.twin-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.twin-fallback img {
+  width: 12rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.twin-fallback h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: rgba(233, 239, 246, 0.92);
+}
+
+.twin-fallback p {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: rgba(226, 235, 244, 0.55);
+}
+
+/* ---- 3D load failure (genuine render crash, not WebGL unavailability) --- */
+
+.canvas-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+  background: #171b22;
+  color: rgba(233, 239, 246, 0.85);
+}
+
+.canvas-error p {
+  margin: 0;
+  max-width: 30rem;
+}
+
+.canvas-error-detail {
+  font-size: 0.8rem;
+  color: rgba(226, 235, 244, 0.5);
+}
+
+/* ---- reset view ------------------------------------------------------- */
+
+.reset-view {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.4rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  appearance: none;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 19, 24, 0.66);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  color: rgba(233, 239, 246, 0.85);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.reset-view:hover {
+  background: rgba(30, 35, 43, 0.85);
+  color: #fff;
+}
+
+/* ---- compact screens --------------------------------------------------- */
+
+/* Phones and small tablets. The rail goes horizontal under the toggle, the
+   caption card spans the width, and every control grows to a comfortable
+   touch target. */
+@media (max-width: 900px) {
+  .tour-rail {
+    top: 4.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row;
+    gap: 0.65rem;
+  }
+
+  .tour-step {
+    /* a 9px dot is not a tap target; pad it out to ~40px without moving it */
+    padding: 0.6rem 0.35rem;
+  }
+
+  .tour-step-label {
+    display: none;
+  }
+
+  .tour-card {
+    left: 0.7rem;
+    right: 0.7rem;
+    bottom: 0.7rem;
+    width: auto;
+    padding: 0.95rem 1rem 1rem;
+    /* never let a long blurb eat the whole viewport */
+    max-height: 42vh;
+    overflow-y: auto;
+  }
+
+  .tour-title {
+    font-size: 1.12rem;
+  }
+
+  .tour-blurb {
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .tour-nav,
+  .tour-exit {
+    padding: 0.55rem 0.95rem;
+    min-height: 42px;
+  }
+
+  .tour-hint {
+    display: none;
+  }
+
+  .view-toggle {
+    top: 0.7rem;
+  }
+
+  .view-option {
+    padding: 0.5rem 1rem;
+    font-size: 0.74rem;
+  }
+
+  .reset-view {
+    top: 0.72rem;
+    right: 0.7rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0;
+    gap: 0;
+    min-height: 40px;
+  }
+
+  .reset-view svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+/* Very short viewports — a phone in landscape. The caption is the first
+   thing to give way; the model is what people came for. */
+@media (max-height: 480px) {
+  .tour-card {
+    max-height: 38vh;
+    padding: 0.7rem 0.9rem 0.75rem;
+  }
+
+  .tour-blurb {
+    display: none;
+  }
+
+  .tour-rail {
+    display: none;
+  }
+}
