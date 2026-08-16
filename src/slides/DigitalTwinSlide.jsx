@@ -5,7 +5,11 @@ import * as THREE from "three";
 import { Scene } from "../Scene.jsx";
 import { useSimStore } from "../store.js";
 import { ViewToggle } from "../ui/ViewToggle.jsx";
-import { OverviewCaption } from "../ui/OverviewCaption.jsx";
+import { TourOverlay } from "../ui/TourOverlay.jsx";
+import { ResetView } from "../ui/ResetView.jsx";
+import { ControlPanel } from "../ui/ControlPanel.jsx";
+import { PanelToggle } from "../ui/PanelToggle.jsx";
+import { ExplainOverlay } from "../ui/ExplainOverlay.jsx";
 import { CanvasErrorBoundary } from "../ui/CanvasErrorBoundary.jsx";
 import { hasWebGL } from "../ui/hasWebGL.js";
 
@@ -47,23 +51,30 @@ function Fallback() {
   );
 }
 
-// The carbon capture unit digital twin — display-only stop on the deck.
-// The deck already walks a visitor through the story slide by slide, so
-// this stop shows a single framing (the model's overview shot, sealed
-// inside its shipping container) rather than its own guided walkthrough:
-// the container/exterior/cutaway toggle and free orbit still work exactly
-// as before, just without the stage stepper or its keyboard shortcuts,
-// which would otherwise fight the slide-to-slide arrow keys.
+// The carbon capture unit digital twin — the full standalone experience,
+// embedded as the deck's second slide: the container/exterior/cutaway
+// toggle, the stage rail, the instrumentation drawer and the guided
+// explanation all work exactly as they do stand-alone. The one thing this
+// wrapper adds on top is the WebGL-availability gate, which the standalone
+// app doesn't need on its own dedicated page.
+//
+// The stage rail's own arrow-key stepping and the deck's slide-to-slide
+// arrow keys both live on `window`, so Presentation.jsx defers to the twin
+// (skips its own slide switch) whenever `tourActive` is on — see the guard
+// there.
 export function DigitalTwinSlide() {
   const compact = useIsCompact();
-  const setViewMode = useSimStore((s) => s.setViewMode);
-  const setTourActive = useSimStore((s) => s.setTourActive);
-  const requestRecenter = useSimStore((s) => s.requestRecenter);
+  const explainActive = useSimStore((s) => s.explainActive);
   const [webgl] = useState(hasWebGL);
 
-  useEffect(() => {
-    setTourActive(false);
-  }, [setTourActive]);
+  // Closed by default: the model is the point, and the instrumentation
+  // drawer covers nearly half of it.
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  // On a phone the drawer is a sheet along the bottom rather than a panel
+  // over the model, and the canvas gives up the height rather than being
+  // covered by it: two thirds model, one third instruments.
+  const split = compact && panelOpen && !explainActive;
 
   if (!webgl) {
     return (
@@ -77,7 +88,7 @@ export function DigitalTwinSlide() {
 
   return (
     <div className="app-layout">
-      <div className="canvas-wrap">
+      <div className={`canvas-wrap${split ? " split" : ""}`}>
         <CanvasErrorBoundary>
           <Canvas
             gl={{
@@ -113,28 +124,17 @@ export function DigitalTwinSlide() {
             />
           </Canvas>
         </CanvasErrorBoundary>
-        <ViewToggle />
-        <button
-          type="button"
-          className="reset-view"
-          onClick={() => {
-            // "container" is the unit's opening state — sealed, the first
-            // thing worth saying about it — not "exterior", which is a step
-            // in from there.
-            setViewMode("container");
-            requestRecenter();
-          }}
-          title="Back to the overview"
-        >
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path
-              d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"
-              fill="currentColor"
-            />
-          </svg>
-          Reset view
-        </button>
-        <OverviewCaption />
+        {!explainActive && <ViewToggle />}
+        {!explainActive && (
+          <PanelToggle
+            open={panelOpen}
+            onToggle={() => setPanelOpen((v) => !v)}
+          />
+        )}
+        {!explainActive && <ResetView />}
+        {!explainActive && <TourOverlay />}
+        <ExplainOverlay />
+        <ControlPanel open={panelOpen && !explainActive} compact={compact} />
       </div>
     </div>
   );

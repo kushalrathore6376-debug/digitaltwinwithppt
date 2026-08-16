@@ -1,9 +1,5 @@
 const FACTS = [
-  {
-    label: "Partner",
-    value: "NCB",
-    detail: "National Council for Cement & Building Materials — Govt. of India",
-  },
+
   {
     label: "Effective date",
     value: "10 Mar 2026",
@@ -38,6 +34,21 @@ const DOCS = [
   },
 ];
 
+const PARTNERS = [
+  {
+    name: "Rocksensor",
+    image: "/partners/rocksensor.png",
+    alt: "Rocksensor logo",
+    detail: "Sensing beyond the Vision",
+  },
+  {
+    name: "NCCBM",
+    image: "/partners/nccbm.png",
+    alt: "National Council for Cement and Building Materials logo",
+    detail: "National Council for Cement and Building Materials",
+  },
+];
+
 // Proof-of-partnership slide — the deck's credibility anchor between
 // Products and Team. Shows the opening two pages of the notarised NCB MOU
 // as premium "document" cards rather than a flat embed, so the legal
@@ -64,7 +75,7 @@ export function PartnershipSlide() {
           </p>
         </header>
 
-        <div className="stat-strip">
+        <div className="stat-strip fact-strip">
           {FACTS.map((f) => (
             <div className="stat-tile fact-tile" key={f.label}>
               <span className="stat-label fact-eyebrow">{f.label}</span>
@@ -95,6 +106,19 @@ export function PartnershipSlide() {
                 <span className="doc-caption-sub">{d.caption}</span>
               </figcaption>
             </figure>
+          ))}
+        </div>
+
+        <h2 className="section-heading">Partners</h2>
+        <div className="partner-grid">
+          {PARTNERS.map((p) => (
+            <article className="partner-card" key={p.name}>
+              <div className="partner-logo">
+                <img src={p.image} alt={p.alt} />
+              </div>
+              <h3>{p.name}</h3>
+              <p>{p.detail}</p>
+            </article>
           ))}
         </div>
       </div>

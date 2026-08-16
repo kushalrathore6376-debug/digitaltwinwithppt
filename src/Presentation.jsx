@@ -7,6 +7,7 @@ import { ScaleupSlide } from "./slides/ScaleupSlide.jsx";
 import { PartnershipSlide } from "./slides/PartnershipSlide.jsx";
 import { TeamSlide } from "./slides/TeamSlide.jsx";
 import { FullscreenButton } from "./ui/FullscreenButton.jsx";
+import { useSimStore } from "./store.js";
 
 const SLIDES = [
   { id: "intro", label: "Intro" },
@@ -47,6 +48,11 @@ export default function Presentation() {
 
   useEffect(() => {
     const onKey = (e) => {
+      // The digital twin's own stage rail steps with the same arrow keys
+      // while its tour is active (see TourDriver.jsx) — both handlers live
+      // on `window`, so the slide deck defers to it rather than also
+      // changing slides underneath it.
+      if (useSimStore.getState().tourActive) return;
       if (e.key === "ArrowRight") goTo(index + 1);
       else if (e.key === "ArrowLeft") goTo(index - 1);
     };

@@ -653,9 +653,14 @@ export const LADDER_TILT = (7 * Math.PI) / 180;
 // bolted to the ladder: everything was in one plane, so nothing said which
 // part you hold and which part you stand on. A handrail has to be *above* the
 // surface you are on, the same way a stair's is, and on a ladder leaning back
-// at 7° that direction is very nearly straight out of its face. Hand height,
-// which is the deck rail's height for the same reason.
-export const LADDER_RAIL_STANDOFF = RAIL_HEIGHT * 0.92;
+// at 7° that direction is very nearly straight out of its face.
+//
+// Full hand height was too much of it. The ladder already leans away from the
+// deck, and a metre of standoff on top of that put the rails through the -Z
+// wall and out of the box — which is a handrail hanging in mid-air outside a
+// sealed container. Just over half a metre still reads as something you hold
+// rather than something you climb, and the whole assembly stays inboard.
+export const LADDER_RAIL_STANDOFF = 0.62;
 
 // Footprints the under-deck bracing has to keep clear of, as [minX, maxX].
 // Only the storage tank stands under the deck now.
@@ -686,7 +691,7 @@ export const PLATFORM_POSITION = [-2.8, 0.07, LANE_B_Z / 2];
 //   -Z   the deck edge and lane A's tank shells
 //   +Z   lane B's tank shells
 //   +Y   the gas outlet header, the highest pipe in the plant
-export const ENCLOSURE_MIN = [-15.8, 0, -3.0];
+export const ENCLOSURE_MIN = [-15.8, 0, -3.9];
 // The roof clears the gas outlet header — the highest pipe in the plant —
 // with enough room over it for the valve handles standing on it. Lifting the
 // grade tanks onto skirts pushed the deck, the chambers and that header up
@@ -714,16 +719,18 @@ export const ENCLOSURE_PORT = {
 // scales the whole thing by, and it was making a housing four storeys tall
 // look like something you could lift on a forklift. A tall equipment gate,
 // wide enough to walk plant through, puts the box back at the size it is.
-// Tall enough to clear the whole access route, which is what actually sets it
-// now: the ladder leans back through this opening and its handrails stand a
-// further metre out over the climb, so everything from grade to deck level is
-// outboard of the wall line. At door height the wall panel cut straight
-// through the rails and their posts, which looked like a modelling mistake
-// from outside the sealed box — because it was one.
+// A tall equipment gate rather than a door.
+//
+// It briefly had to clear the entire access route, because the ladder and its
+// handrails stood outboard of the wall line — a gate sized by a modelling
+// problem rather than by anything real. The housing is deeper now and the
+// rails are shorter, so the whole climb is inboard and this is back to being
+// what it should be: an opening sized to walk plant through, and the one
+// detail on a plain white box that says how big the box is.
 export const ENCLOSURE_GATE = {
   x: LADDER_X,
   width: 2.2,
-  height: DECK_Y + 0.5,
+  height: 4.4,
 };
 
 // Ground pad the whole plant stands on. Centred on the container, and wide

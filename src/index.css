@@ -46,6 +46,7 @@ body,
 .canvas-wrap {
   flex: 1;
   height: 100%;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; /* anchors the view toggle over the canvas */
   /* A flex item's default min-width is its min-content size, which here is
      the <canvas> element's own pixel width. Once the panel collapsed and
@@ -85,6 +86,7 @@ body,
   border: 0;
   background: none;
   cursor: pointer;
+  white-space: nowrap;
   padding: 0.45rem 1.1rem;
   border-radius: 999px;
   font: inherit;
@@ -135,7 +137,8 @@ body,
   pointer-events: auto;
 }
 
-/* Stage rail down the left edge */
+/* Stage rail down the left edge — the whole overlay. Quiet dots until you
+   hover it, then a directory of everything in the plant. */
 .tour-rail {
   position: absolute;
   top: 50%;
@@ -182,19 +185,15 @@ body,
     transform 0.4s cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
-.tour-step.done .tour-step-dot {
-  background: rgba(226, 235, 244, 0.4);
-}
-
 .tour-step.current .tour-step-dot {
-  background: var(--accent, #6ee7ff);
-  border-color: var(--accent, #6ee7ff);
+  background: var(--accent);
+  border-color: var(--accent);
   transform: scale(1.35);
-  box-shadow: 0 0 0 5px rgba(110, 231, 255, 0.14);
+  box-shadow: 0 0 0 5px var(--accent-soft);
 }
 
-/* Labels stay hidden until the rail is hovered, so thedefault state is just a
-   row of quiet dots rather than a menu competing with the model. */
+/* Labels stay hidden until the rail is hovered, so the default state is just
+   a row of quiet dots rather than a menu competing with the model. */
 .tour-step-label {
   opacity: 0;
   transform: translateX(-6px);
@@ -207,190 +206,6 @@ body,
 .tour-step.current .tour-step-label {
   opacity: 1;
   transform: none;
-}
-
-/* Caption card, bottom left */
-.tour-card {
-  position: absolute;
-  left: 1.6rem;
-  bottom: 1.6rem;
-  width: min(30rem, calc(100% - 3.2rem));
-  padding: 1.15rem 1.3rem 1.1rem;
-  border-radius: 16px;
-  background: rgba(14, 17, 22, 0.66);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
-  animation: tour-card-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes tour-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-}
-
-.tour-index {
-  margin: 0 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--accent, #6ee7ff);
-}
-
-.tour-index-total {
-  color: rgba(226, 235, 244, 0.34);
-}
-
-.tour-title {
-  margin: 0 0 0.4rem;
-  font-size: 1.32rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.tour-blurb {
-  margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: rgba(226, 235, 244, 0.68);
-}
-
-.tour-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.tour-nav {
-  appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
-  color: inherit;
-  font: inherit;
-  font-size: 0.82rem;
-  padding: 0.42rem 0.9rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    opacity 0.25s ease;
-}
-
-.tour-nav:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.tour-nav:disabled {
-  opacity: 0.32;
-  cursor: default;
-}
-
-.tour-nav.primary {
-  background: #eef4fa;
-  border-color: transparent;
-  color: #0f1216;
-  font-weight: 600;
-}
-
-.tour-nav.primary:hover:not(:disabled) {
-  background: #ffffff;
-}
-
-.tour-exit {
-  margin-left: auto;
-  appearance: none;
-  border: 0;
-  background: none;
-  color: rgba(226, 235, 244, 0.45);
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: color 0.25s ease;
-}
-
-.tour-exit:hover {
-  color: rgba(236, 243, 250, 0.9);
-}
-
-.tour-resume {
-  position: absolute;
-  left: 1.6rem;
-  bottom: 1.6rem;
-  z-index: 4;
-  appearance: none;
-  padding: 0.55rem 1.1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(14, 17, 22, 0.66);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  color: inherit;
-  font: inherit;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-/* Scroll affordance */
-.tour-hint {
-  position: absolute;
-  right: 1.8rem;
-  bottom: 1.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(226, 235, 244, 0.4);
-  animation: tour-card-in 0.9s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.tour-hint-wheel {
-  width: 18px;
-  height: 28px;
-  border: 1px solid currentColor;
-  border-radius: 10px;
-  position: relative;
-}
-
-.tour-hint-wheel::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 6px;
-  width: 2px;
-  height: 5px;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: currentColor;
-  animation: tour-wheel 1.8s ease-in-out infinite;
-}
-
-@keyframes tour-wheel {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  60% {
-    transform: translateY(9px);
-    opacity: 0.2;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tour-card,
-  .tour-hint {
-    animation: none;
-  }
-  .tour-hint-wheel::after {
-    animation: none;
-  }
 }
 
 /* ---- 3D unavailable fallback ---------------------------------------------- */
@@ -489,9 +304,8 @@ body,
 
 /* ---- compact screens --------------------------------------------------- */
 
-/* Phones and small tablets. The rail goes horizontal under the toggle, the
-   caption card spans the width, and every control grows to a comfortable
-   touch target. */
+/* Phones and small tablets. The rail goes horizontal under the toggle, and
+   every control grows to a comfortable touch target. */
 @media (max-width: 900px) {
   .tour-rail {
     top: 4.4rem;
@@ -507,36 +321,6 @@ body,
   }
 
   .tour-step-label {
-    display: none;
-  }
-
-  .tour-card {
-    left: 0.7rem;
-    right: 0.7rem;
-    bottom: 0.7rem;
-    width: auto;
-    padding: 0.95rem 1rem 1rem;
-    /* never let a long blurb eat the whole viewport */
-    max-height: 42vh;
-    overflow-y: auto;
-  }
-
-  .tour-title {
-    font-size: 1.12rem;
-  }
-
-  .tour-blurb {
-    font-size: 0.82rem;
-    line-height: 1.5;
-  }
-
-  .tour-nav,
-  .tour-exit {
-    padding: 0.55rem 0.95rem;
-    min-height: 42px;
-  }
-
-  .tour-hint {
     display: none;
   }
 
@@ -565,19 +349,643 @@ body,
   }
 }
 
-/* Very short viewports — a phone in landscape. The caption is the first
-   thing to give way; the model is what people came for. */
+/* Very short viewports — a phone in landscape. The rail is the first thing
+   to give way; the model is what people came for. */
 @media (max-height: 480px) {
-  .tour-card {
-    max-height: 38vh;
-    padding: 0.7rem 0.9rem 0.75rem;
-  }
-
-  .tour-blurb {
-    display: none;
-  }
-
   .tour-rail {
     display: none;
+  }
+}
+
+/* ---- control panel ---------------------------------------------------- */
+/*
+   The instrumentation drawer. It was a fixed column beside the render until
+   the model grew wide enough to need the whole window; it is a drawer over
+   the canvas now, toggled from the button beside the view switch, and
+   everything inside it is unchanged from when it was a column.
+*/
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(620px, 44vw);
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  padding-top: 4.2rem;
+  background: linear-gradient(180deg, var(--panel-bg), var(--bg-2));
+  border-left: 1px solid var(--panel-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  align-content: start;
+  z-index: 6;
+  /* Slides rather than pops. It covers nearly half the render, so it has to
+     read as a drawer being pulled out over the model — appearing instantly
+     looks like the scene was replaced. */
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel.hidden {
+  transform: translateX(100%);
+  /* nothing inside a closed drawer should be tabbable */
+  visibility: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.4s;
+}
+
+.panel-title,
+.panel-subtitle,
+.error-banner,
+.run-toggle,
+.panel-footer {
+  grid-column: 1 / -1;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.panel-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.run-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+}
+
+.run-toggle span {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.toggle-btn {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  background: #3a404b;
+  transition: background 0.2s ease;
+}
+
+.toggle-btn::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.toggle-btn.on {
+  background: var(--green);
+}
+
+.toggle-btn.on::after {
+  transform: translateX(20px);
+}
+
+.chamber-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.chamber-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.chamber-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.phase-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.phase-badge.capturing {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.phase-badge.regenerating {
+  color: var(--amber);
+  background: rgba(217, 154, 61, 0.14);
+}
+
+.phase-badge.draining {
+  color: #e2574e;
+  background: rgba(226, 87, 78, 0.14);
+}
+
+.phase-badge.filling,
+.phase-badge.holding {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.phase-badge.active {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.phase-badge.ready,
+.phase-badge.standby {
+  color: var(--text-dim);
+  background: rgba(154, 163, 176, 0.14);
+}
+
+.temp-fill.decomp {
+  background: linear-gradient(90deg, var(--accent), var(--green));
+}
+
+.temp-fill.sat {
+  background: linear-gradient(90deg, var(--amber), #e2574e);
+}
+
+.phase-badge.saturated {
+  color: #e2574e;
+  background: rgba(226, 87, 78, 0.14);
+}
+
+.error-banner {
+  background: rgba(226, 87, 78, 0.16);
+  border: 1px solid rgba(226, 87, 78, 0.5);
+  color: #f0837b;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.temp-hint.warn {
+  color: #f0837b;
+}
+
+.sat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+}
+
+.sat-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.sat-bar {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.temp-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.temp-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--green);
+}
+
+.temp-value.hot {
+  color: #e2574e;
+}
+
+.temp-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: #3a404b;
+  overflow: visible;
+  margin-bottom: 0.6rem;
+}
+
+.temp-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--amber));
+  transition: width 0.2s linear;
+}
+
+.temp-fill.hot {
+  background: linear-gradient(90deg, var(--amber), #e2574e);
+}
+
+.temp-threshold {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: #e2574e;
+  border-radius: 1px;
+}
+
+.temp-hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.empty-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(226, 87, 78, 0.14);
+  border: 1px solid rgba(226, 87, 78, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.empty-btn:hover:not(:disabled) {
+  background: rgba(226, 87, 78, 0.28);
+}
+
+.empty-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.fill-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fill-value {
+  min-width: 3ch;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* A level bar sitting where a slider would: it has to take the row's spare
+   width, or it collapses to its content. */
+.fill-row .temp-bar {
+  flex: 1;
+}
+
+/* Drawer handle, on the left of the render so it never sits under the
+   drawer it opens. */
+.panel-toggle {
+  position: absolute;
+  top: 1.1rem;
+  left: 1.1rem;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  appearance: none;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 19, 24, 0.62);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  color: rgba(233, 239, 246, 0.72);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  transition:
+    color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.panel-toggle:hover {
+  color: #eef4fa;
+}
+
+.panel-toggle.on {
+  background: #eef4fa;
+  border-color: transparent;
+  color: #0f1216;
+}
+
+/* Phones. The drawer was full width *and* full height here, which is to say
+   it replaced the model with a wall of controls — on the one device where the
+   model is hardest to see in the first place. It is a bottom sheet now: the
+   canvas above it shrinks to two thirds rather than being covered, so the
+   plant is still there while you drive it.
+
+   Everything explanatory inside it goes as well. The hints and captions are
+   worth their space on a desktop, where they sit beside the model rather than
+   in front of it; on a phone they are the difference between four controls
+   visible and one. */
+@media (max-width: 820px) {
+  .canvas-wrap.split {
+    height: 66dvh;
+  }
+
+  .panel {
+    /* Fixed to the viewport, not absolute inside the canvas.
+       .canvas-wrap is the containing block for the desktop drawer, which is
+       what it should be there — the drawer slides over the render. Here the
+       canvas has just given up a third of its height, so anchoring to it put
+       the sheet inside the *remaining* two thirds and left the real bottom
+       third as empty page: a black band under a squashed panel. The sheet
+       belongs to the window, so it is positioned against the window. */
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 34dvh;
+    padding: 0.7rem 0.75rem 0.9rem;
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    overscroll-behavior: contain;
+  }
+
+  .panel.hidden {
+    transform: translateY(100%);
+  }
+
+  /* less to read, more to press */
+  .panel .panel-subtitle,
+  .panel .temp-hint,
+  .panel .panel-footer,
+  .panel .sat-label {
+    display: none;
+  }
+
+  .panel-title {
+    grid-column: 1 / -1;
+    font-size: 0.9rem;
+  }
+
+  .chamber-card,
+  .temp-card {
+    padding: 0.55rem 0.6rem 0.6rem;
+  }
+
+  .chamber-name {
+    font-size: 0.72rem;
+  }
+
+  .act-btn,
+  .empty-btn {
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .run-toggle {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .panel-toggle {
+    top: 0.7rem;
+    left: 0.7rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .panel-toggle-label {
+    display: none;
+  }
+}
+
+/* Two actions on one vessel card — charge and empty, sitting side by side */
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.btn-row > * {
+  flex: 1 1 0;
+  margin-top: 0;
+}
+
+/* The positive half of a pair: start a transfer, rather than dump a vessel.
+   Same shape as .empty-btn, in the accent instead of the warning colour. */
+.act-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 138, 61, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.act-btn:hover:not(:disabled) {
+  background: rgba(255, 138, 61, 0.3);
+}
+
+.act-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Empty, and stopped part-way — both are "this vessel is doing nothing",
+   which is the one thing the badge needs to say. */
+.phase-badge.empty,
+.phase-badge.idle {
+  background: rgba(154, 163, 176, 0.16);
+  color: var(--text-dim);
+}
+
+/* ---- guided explanation ----------------------------------------------- */
+
+/* The button that starts it. Bottom left, where nothing else lives, and away
+   from the three controls clustered along the top edge — this is the one
+   invitation on screen rather than another switch. */
+.explain-start {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  min-height: 40px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  background: rgba(20, 24, 30, 0.82);
+  border: 1px solid rgba(255, 138, 61, 0.4);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.explain-start:hover {
+  background: var(--accent-soft);
+  border-color: rgba(255, 138, 61, 0.75);
+}
+
+/* The caption. Full width of the frame's centre, pinned to the bottom, and
+   never wider than a comfortable line length. */
+.explain {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 1.6rem));
+  z-index: 8;
+  pointer-events: none;
+}
+
+.explain-card {
+  pointer-events: auto;
+  background: rgba(14, 17, 22, 0.9);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 0.9rem 1rem 0.75rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.explain-progress {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin-bottom: 0.7rem;
+}
+
+.explain-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  /* stepped by an interval, so it is eased across the gaps between ticks */
+  transition: width 0.1s linear;
+}
+
+.explain-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.explain-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+}
+
+.explain-count {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.explain-buttons {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.explain-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.explain-buttons button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.explain-buttons button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 820px) {
+  .explain-start {
+    left: 0.7rem;
+    bottom: 0.7rem;
+  }
+
+  .explain {
+    bottom: 0.7rem;
+    width: calc(100% - 1.4rem);
+  }
+
+  .explain-card {
+    padding: 0.75rem 0.8rem 0.6rem;
+  }
+
+  .explain-text {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+}
+
+/* A phone in landscape has no room for a five-line caption; trim it to two
+   and let the model keep the frame. */
+@media (max-height: 480px) {
+  .explain-text {
+    font-size: 0.78rem;
+    max-height: 3.2em;
+    overflow-y: auto;
   }
 }

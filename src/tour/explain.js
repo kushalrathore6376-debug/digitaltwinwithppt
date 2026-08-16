@@ -1,7 +1,6 @@
 import { SECTION } from "./stages.js";
 import {
   gasSupplyRoute,
-  dacDuctRoute,
   gasMainRoute,
   drainRoute,
   storageTransferRoute,
@@ -25,18 +24,17 @@ import {
 // for the occasion. If the pipework moves, the explanation moves with it, and
 // it can never end up pointing at where a pipe used to be.
 //
-// Register is technical and declarative: unit operations named as such, the
-// state of the stream at each boundary, and the plant's own parameters quoted
-// where they are the point. Every figure quoted here — nominal feed, cycle
-// time, dump set point, yield per charge, recovery per pass — is read off the
-// same constants the simulation runs on, so the narration cannot drift from
-// the model it is describing. If a constant in store.js changes, the sentence
-// quoting it is wrong, and that is deliberate: it is a claim about this plant,
-// not decoration.
+// Register is technical and declarative: unit operations named as such, and
+// the state of the stream at each boundary. What it does not carry is
+// numbers — no feed rate, no cycle time, no yield per charge. Those are tuning
+// constants of a demonstration model rather than properties of the process,
+// and quoting them invites the one question the model cannot answer: where did
+// that figure come from? The stages and their sequence are the claim; the
+// arithmetic belongs on a datasheet, not in a walkthrough.
 //
-// Still one or two sentences a step. Density is in the vocabulary, not the
-// length — the text has to be readable before the camera has finished moving,
-// and on a phone it has three lines.
+// One or two sentences a step. Density is in the vocabulary, not the length —
+// the text has to be readable before the camera has finished moving, and on a
+// phone it has three lines.
 
 const A = VESSEL_A_LOCAL;
 
@@ -72,21 +70,12 @@ export const EXPLAIN_STEPS = [
     text: "The tapping line is drawn off the shaft at low elevation, penetrates the enclosure wall and terminates below liquid level in the conditioning column. A single ball valve at the header is the only isolation in the run.",
   },
   {
-    id: "dac",
-    view: "cutaway",
-    camera: { position: [13, 19, 16], target: [5, 13.5, 3] },
-    focus: [SECTION.DAC, SECTION.COLUMN, SECTION.STRUCTURE],
-    seconds: 9,
-    arrow: dacDuctRoute,
-    text: "Alternative intake: a forced-draught direct-air-capture bank discharging to the same header. The two sources are interlocked — one intake at a time, so column loading is attributable to a single stream.",
-  },
-  {
     id: "column",
     view: "cutaway",
     camera: { position: [13, 12, 12], target: [4.8, 8.2, 0] },
-    focus: [SECTION.COLUMN, SECTION.SOURCE, SECTION.DAC],
-    seconds: 11,
-    text: "Direct-contact water column. Gas is sparged below the surface for particulate scrubbing and sensible-heat removal; the inventory takes up that heat and is dumped and recharged at an 80 °C set point, referenced to 28 °C ambient.",
+    focus: [SECTION.COLUMN, SECTION.SOURCE],
+    seconds: 9,
+    text: "Direct-contact water column. Gas is sparged below the surface for particulate scrubbing and sensible-heat removal; the inventory takes up that heat, and is dumped and recharged once it reaches its temperature limit.",
   },
   {
     id: "column-to-absorption",
@@ -102,8 +91,8 @@ export const EXPLAIN_STEPS = [
     view: "cutaway",
     camera: { position: [8, 13, 14], target: [0, 8.8, 0] },
     focus: [SECTION.ABSORPTION, SECTION.COLUMN],
-    seconds: 12,
-    text: "Chemisorption stage. Gas is sparged through a lean solvent inventory held at 80 % of vessel volume, and CO₂ is bound into the liquid phase. Loading reaches saturation in approximately six hours at the nominal 25 L·min⁻¹ feed, at which point duty transfers to the parallel train.",
+    seconds: 10,
+    text: "Chemisorption stage. Gas is sparged through a lean solvent inventory and CO₂ is bound into the liquid phase. Absorption continues to saturation, at which point duty transfers to the parallel train and the rich solvent is held for transfer.",
   },
   {
     id: "absorption-to-storage",
@@ -143,8 +132,8 @@ export const EXPLAIN_STEPS = [
     // either side in frame, so it stays legible where in the line this is.
     camera: { position: [-16, 8.5, 15], target: [-11.6, 3.2, 0.6] },
     focus: [SECTION.FILTRATION, SECTION.STRUCTURE],
-    seconds: 9,
-    text: "The solid fraction discharges through the chute as graphite: the product stream, and the terminal sink for the captured carbon. Yield is of the order of 42 kg per full filter charge.",
+    seconds: 8,
+    text: "The solid fraction discharges through the chute as graphite: the product stream, and the terminal sink for the captured carbon.",
   },
   {
     id: "filtration-to-treatment",
@@ -169,9 +158,9 @@ export const EXPLAIN_STEPS = [
     view: "cutaway",
     camera: { position: [12, 10, 16], target: [3, 6, 0] },
     focus: [SECTION.INVENTORY, SECTION.ABSORPTION, SECTION.STRUCTURE],
-    seconds: 11,
+    seconds: 10,
     arrow: solventFeedRoute,
-    text: "Lean solvent is charged back to the absorbers, closing the circuit. Recovery is approximately 55 % per pass; the deficit is made up from the drum, and that make-up rate is the plant's solvent consumption per tonne captured.",
+    text: "Lean solvent is charged back to the absorbers, closing the circuit. Recovery per pass is partial, and the balance is made up from the drum — that make-up is the plant's standing solvent demand.",
   },
   {
     id: "close",
