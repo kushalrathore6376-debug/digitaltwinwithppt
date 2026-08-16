@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useSimStore, flowScale, isGasFlowing } from "../store.js";
+import { useSimStore, flowScale, isCapturing } from "../store.js";
 import { makeRandom } from "./rng.js";
 import {
   LIFT,
@@ -47,10 +47,14 @@ export function Bubbles({ vesselLocal, chamberId, count = 16 }) {
     if (!group) return;
     const state = useSimStore.getState();
     const chamber = state.chambers[chamberId];
+    // Gas from either source, into whichever chamber is on duty. Bubbles are
+    // the one part of this that does wait for solvent: gas is pushed into an
+    // empty chamber just the same, but there is nothing in there for it to
+    // bubble up through.
     const show =
-      state.autoRun &&
+      isCapturing(state) &&
       state.activeChamber === chamberId &&
-      chamber.phase === "active";
+      chamber.fill > 0.08;
     group.visible = show;
     if (!show) return;
 
@@ -113,7 +117,7 @@ export function ColumnBubbles({ count = 10 }) {
     if (!group) return;
     const state = useSimStore.getState();
     const water = state.chambers.W;
-    const show = isGasFlowing(state) && water.fill > 0.1;
+    const show = isCapturing(state) && water.fill > 0.1;
     group.visible = show;
     if (!show) return;
 

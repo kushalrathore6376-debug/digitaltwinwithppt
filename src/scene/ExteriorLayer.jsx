@@ -5,6 +5,7 @@ import { PipeSkin } from "../components/exterior/PipeSkin.jsx";
 import { ThreeWayValve } from "../components/exterior/ThreeWayValve.jsx";
 import { LineValve } from "../components/exterior/LineValve.jsx";
 import { useMachineIdle } from "../components/useMachineIdle.js";
+import { isGasFlowing } from "../store.js";
 import { Section } from "../tour/Section.jsx";
 import { SECTION } from "../tour/stages.js";
 import {
@@ -20,37 +21,47 @@ import {
   COLUMN_POSITION,
   COLUMN_RADIUS,
   COLUMN_CENTER_Y,
-  COLUMN_BASE_Y,
   columnDrainRoute,
   BRANCH_TEE,
   solventFeedTee,
   FILTRATION_POSITION,
-  FILTRATION_HEIGHT,
-  FILTRATION_RADIUS,
   GRAPHITE_BIN_POSITION,
   decompTransferRoute,
   graphiteChuteRoute,
   solventReturnRoute,
   solventFeedRoute,
   solventFeedBranchRoute,
+  SOLVENT_A_VALVE_POS,
+  inventoryChargeRoute,
+  INVENTORY_CHARGE_VALVE_POS,
   SOLVENT_FEED_VALVE_POS,
   SOLVENT_RETURN_VALVE_POS,
-  RECOVERED_POSITION,
-  RECOVERED_HEIGHT,
-  RECOVERED_RADIUS,
+  TREATMENT_POSITION,
+  INVENTORY_POSITION,
   WATER_HEIGHT,
   SHELL_RADIUS,
-  STORAGE_SHELL_RADIUS,
-  DECOMP_SHELL_RADIUS,
+  GRADE_HEIGHT,
+  GRADE_SKIRT,
+  GRADE_CENTER_Y,
+  GRADE_SHELL_RADIUS,
   HEAD_RATIO,
   DECK_Y,
-  BASE_HEIGHT,
+  COLUMN_SKIRT,
+  columnDrainValvePos,
+  GAS_A_VALVE_POS,
+  GAS_HEADER_VALVE_POS,
+  gasBranchValvePos,
+  drainValvePos,
+  TRANSFER_VALVE_POS,
+  DECOMP_TRANSFER_VALVE_POS,
+  CABINET_POSITION,
+  PLATFORM_POSITION,
   BASE_POSITION,
   DECOMP_POSITION,
-  DECOMP_HEIGHT,
   storageTransferRoute,
   drainRoute,
   gasSupplyRoute,
+  dacDuctRoute,
   gasMainRoute,
   gasBranchRoute,
   ventRoute,
@@ -78,7 +89,7 @@ function DriveMotor({ position }) {
   // The exterior layer is otherwise still. This is the exception, and it is
   // worth the frame: a motor that trembles is unmistakably running, and it
   // costs one object's transform per frame.
-  useMachineIdle(bodyRef, (s) => s.decompFill > 0);
+  useMachineIdle(bodyRef, (s) => s.decompMotor);
 
   return (
     <group position={position} ref={bodyRef}>
@@ -196,10 +207,10 @@ export function ExteriorLayer() {
     <group>
       <Section id={SECTION.STRUCTURE}>
         <Structure />
-        <ControlCabinet position={[-5.2, 0, 4.4]} />
-        {/* small maintenance platform at grade between the two tanks */}
-        <mesh position={[-2.6, 0.07, 2.6]} rotation={[0, 0.3, 0]}>
-          <boxGeometry args={[2.2, 0.1, 1.4]} />
+        <ControlCabinet position={CABINET_POSITION} />
+        {/* small maintenance platform in the walkway between the two lanes */}
+        <mesh position={PLATFORM_POSITION}>
+          <boxGeometry args={[2.2, 0.1, 1.3]} />
           <meshStandardMaterial {...checkerPlate("#6f767d")} />
         </mesh>
       </Section>
@@ -245,14 +256,31 @@ export function ExteriorLayer() {
         {/* three-way valve on the gas header above B: this is the junction
             that decides which chamber is on duty */}
         <ThreeWayValve position={BRANCH_TEE} radius={0.11} />
-        {/* and the one that charges the selected chamber with solvent */}
+        {/* and the one that splits the solvent charge toward B, on its way
+            to A further along the header */}
         <ThreeWayValve position={solventFeedTee()} radius={0.11} />
+
+        {/* the same ball valves the schematic shows, on the same sim state.
+            They were cutaway-only, which meant every line in the exterior
+            view ran uninterrupted from vessel to vessel — the single detail
+            that gives a model away as a diagram rather than a plant. */}
+        <LineValve
+          position={GAS_A_VALVE_POS}
+          radius={0.08}
+          openSelector={(s) => isGasFlowing(s) && s.activeChamber === "A"}
+        />
+        <LineValve
+          position={gasBranchValvePos(VESSEL_B_LOCAL)}
+          radius={0.08}
+          lever="x"
+          openSelector={(s) => isGasFlowing(s) && s.activeChamber === "B"}
+        />
 
         <PipeSkin points={ventRoute(VESSEL_A_LOCAL)} radius={0.08} tint="#c4cfda" />
         <PipeSkin points={ventRoute(VESSEL_B_LOCAL)} radius={0.08} tint="#c4cfda" />
       </Section>
 
-      {/* water column, standing at grade under the deck */}
+      {/* water column, standing on the deck beside the chambers */}
       <Section id={SECTION.COLUMN}>
         <ShellVessel
           position={[COLUMN_POSITION[0], COLUMN_CENTER_Y, COLUMN_POSITION[2]]}
@@ -262,7 +290,7 @@ export function ExteriorLayer() {
           tag="C-201"
           title="WATER COLUMN"
           bands={1}
-          skirt={{ height: COLUMN_BASE_Y }}
+          skirt={{ height: COLUMN_SKIRT }}
           nozzles={[
             {
               position: [0, WATER_HEIGHT / 2 + (COLUMN_RADIUS + 0.14) * HEAD_RATIO - 0.08, 0],
@@ -272,6 +300,17 @@ export function ExteriorLayer() {
         />
         {/* bottom drain and the external make-up line into the top */}
         <PipeSkin points={columnDrainRoute()} radius={0.11} />
+        <LineValve
+          position={columnDrainValvePos()}
+          radius={0.11}
+          lever="x"
+          openSelector={(s) => s.chambers.W.phase === "draining"}
+        />
+        <LineValve
+          position={GAS_HEADER_VALVE_POS}
+          radius={0.08}
+          openSelector={isGasFlowing}
+        />
       </Section>
 
       {/* supply line from the stack tap into the column */}
@@ -283,19 +322,26 @@ export function ExteriorLayer() {
         />
       </Section>
 
+      {/* and the air header down from the roof fans into the same column,
+          on its own line — the two sources are independent */}
+      <Section id={SECTION.DAC}>
+        <PipeSkin points={dacDuctRoute()} radius={0.13} tint="#b9c4cf" />
+      </Section>
+
       {/* storage tank at grade, under the deck, and the chamber drains
           that feed it */}
       <Section id={SECTION.STORAGE}>
       <ShellVessel
-        position={[BASE_POSITION[0], BASE_HEIGHT / 2, BASE_POSITION[2]]}
-        radius={STORAGE_SHELL_RADIUS}
-        height={BASE_HEIGHT}
+        position={[BASE_POSITION[0], GRADE_CENTER_Y, BASE_POSITION[2]]}
+        radius={GRADE_SHELL_RADIUS}
+        height={GRADE_HEIGHT}
         tint="#7d848b"
         tag="T-301"
         title="SOLVENT STORAGE"
         bands={2}
         accent="#4a6d8c"
         flatBottom
+        skirt={{ height: GRADE_SKIRT }}
       />
         <PipeSkin
           points={drainA.slice(0, -1)}
@@ -307,26 +353,36 @@ export function ExteriorLayer() {
           radius={0.12}
           tint="#c4cfda"
         />
+        {["A", "B"].map((id, i) => (
+          <LineValve
+            key={id}
+            position={drainValvePos(i === 0 ? VESSEL_A_LOCAL : VESSEL_B_LOCAL)}
+            radius={0.12}
+            lever="x"
+            openSelector={(s) => s.chambers[id].phase === "draining"}
+          />
+        ))}
       </Section>
 
       {/* decomposition chamber with its drive motor on top, and the low
           transfer line that feeds it from storage */}
       <Section id={SECTION.DECOMPOSITION}>
       <ShellVessel
-        position={[DECOMP_POSITION[0], DECOMP_HEIGHT / 2, DECOMP_POSITION[2]]}
-        radius={DECOMP_SHELL_RADIUS}
-        height={DECOMP_HEIGHT}
+        position={[DECOMP_POSITION[0], GRADE_CENTER_Y, DECOMP_POSITION[2]]}
+        radius={GRADE_SHELL_RADIUS}
+        height={GRADE_HEIGHT}
         tint="#79808a"
         tag="R-401"
         title="DECOMPOSITION"
         bands={2}
         accent="#3d8f8f"
         flatBottom
+        skirt={{ height: GRADE_SKIRT }}
       />
       <DriveMotor
         position={[
           DECOMP_POSITION[0],
-          DECOMP_HEIGHT + DECOMP_SHELL_RADIUS * HEAD_RATIO - 0.06,
+          GRADE_SKIRT + GRADE_HEIGHT + GRADE_SHELL_RADIUS * HEAD_RATIO - 0.06,
           DECOMP_POSITION[2],
         ]}
       />
@@ -335,22 +391,33 @@ export function ExteriorLayer() {
           radius={0.12}
           tint="#c4cfda"
         />
+        <LineValve
+          position={TRANSFER_VALVE_POS}
+          radius={0.12}
+          openSelector={(s) => s.storageDraining}
+        />
       </Section>
 
       {/* filtration: the batch is split into graphite and reusable solvent */}
       <Section id={SECTION.FILTRATION}>
         <ShellVessel
-          position={[FILTRATION_POSITION[0], FILTRATION_HEIGHT / 2, FILTRATION_POSITION[2]]}
-          radius={FILTRATION_RADIUS + 0.14}
-          height={FILTRATION_HEIGHT}
+          position={[FILTRATION_POSITION[0], GRADE_CENTER_Y, FILTRATION_POSITION[2]]}
+          radius={GRADE_SHELL_RADIUS}
+          height={GRADE_HEIGHT}
           tint="#75828a"
           tag="F-501"
           title="FILTRATION"
           bands={2}
-          accent="#5a8f7b"
+          accent="#7a9a4a"
           flatBottom
+          skirt={{ height: GRADE_SKIRT }}
         />
         <PipeSkin points={decompTransferRoute()} radius={0.12} />
+        <LineValve
+          position={DECOMP_TRANSFER_VALVE_POS}
+          radius={0.12}
+          openSelector={(s) => s.decompDraining}
+        />
         <PipeSkin points={graphiteChuteRoute()} radius={0.14} />
         <PipeSkin points={solventReturnRoute()} radius={0.12} />
         {/* isolation valve where the return line leaves the filter */}
@@ -361,30 +428,76 @@ export function ExteriorLayer() {
           openSelector={(s) => s.filtrationRunning}
         />
         <GraphiteBin />
+      </Section>
 
-        {/* clean solvent gets its own tank, and feeds the chambers from it */}
+      {/* the treatment chamber, on the far side of the walkway */}
+      <Section id={SECTION.TREATMENT}>
+        {/* what the filter hands over is spent, and gets treated here */}
         <ShellVessel
           position={[
-            RECOVERED_POSITION[0],
-            RECOVERED_HEIGHT / 2,
-            RECOVERED_POSITION[2],
+            TREATMENT_POSITION[0],
+            GRADE_CENTER_Y,
+            TREATMENT_POSITION[2],
           ]}
-          radius={RECOVERED_RADIUS + 0.14}
-          height={RECOVERED_HEIGHT}
+          radius={GRADE_SHELL_RADIUS}
+          height={GRADE_HEIGHT}
           tint="#7f8f88"
           tag="T-602"
-          title="RECOVERED SOLVENT"
+          title="SOLVENT TREATMENT"
           bands={1}
-          accent="#7fb8a2"
+          accent="#2fae94"
           flatBottom
+          skirt={{ height: GRADE_SKIRT }}
+        />
+        {/* treated solvent up and over into the inventory tank */}
+        <PipeSkin points={inventoryChargeRoute()} radius={0.1} />
+        <LineValve
+          position={INVENTORY_CHARGE_VALVE_POS}
+          radius={0.1}
+          openSelector={(s) => s.treatmentDraining}
+        />
+      </Section>
+
+      {/* the inventory tank and the charge it sends up to the chambers */}
+      <Section id={SECTION.INVENTORY}>
+        {/* the inventory tank: the only vessel the chambers are charged
+            from. It stands on a skirt so it can empty out of its own floor,
+            the same as the water column. */}
+        <ShellVessel
+          position={[
+            INVENTORY_POSITION[0],
+            GRADE_CENTER_Y,
+            INVENTORY_POSITION[2],
+          ]}
+          radius={GRADE_SHELL_RADIUS}
+          height={GRADE_HEIGHT}
+          tint="#8a9bab"
+          tag="T-603"
+          title="SOLVENT INVENTORY"
+          bands={2}
+          accent="#5f8fb8"
+          skirt={{ height: GRADE_SKIRT }}
         />
         <PipeSkin points={solventFeedRoute()} radius={0.1} />
         <PipeSkin points={solventFeedBranchRoute()} radius={0.1} />
-        {/* isolation valve at the start of the feed, on the tank spur */}
+        {/* isolation valve on the outlet drop, right under the tank floor —
+            shuts off the whole circuit */}
         <LineValve
           position={SOLVENT_FEED_VALVE_POS}
           radius={0.1}
+          yaw={Math.PI / 2}
           openSelector={(s) => s.solventFeeding}
+        />
+        {/* one valve on the header, past the tee to B — closes off A alone
+            without touching whatever the tee has already sent on to B. B has
+            no valve of its own on this line: it sits right at the tee, and a
+            second ball valve that close to the branch above B's already-drawn
+            three-way tee doubled up on the same junction rather than reading
+            as two separate isolation points. */}
+        <LineValve
+          position={SOLVENT_A_VALVE_POS}
+          radius={0.08}
+          openSelector={(s) => s.chambers.A.phase === "filling"}
         />
       </Section>
     </group>

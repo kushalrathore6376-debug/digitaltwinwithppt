@@ -3,18 +3,19 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useSimStore } from "../store.js";
 import { stageAt } from "../tour/stages.js";
+import { explainStepAt } from "../tour/explain.js";
 
 // Where the camera sits when the tour is off.
-const FREE_LOOK = { position: [19, 12, 25], target: [-1.2, 5.2, 0] };
+const FREE_LOOK = { position: [29, 18, 36], target: [3.6, 7, 2] };
 
 // Where the opening move starts from — wide, low and off to the side, so
 // the push-in reveals the scale of the structure.
-const INTRO_FROM = { position: [35, 3.6, 36], target: [-1.2, 4.2, 0] };
+const INTRO_FROM = { position: [52, 6, 52], target: [3.6, 6, 2] };
 
 const STAGE_SECONDS = 1.5;
 const TRANSITION_SECONDS = 1.3;
 const INTRO_SECONDS = 2.8;
-const IDLE_BEFORE_ORBIT = 4; // seconds of no input before the slow orbit resumes
+const EXPLAIN_SECONDS = 2.2;
 
 // Smootherstep: zero velocity *and* zero acceleration at both ends, so the
 // camera never visibly starts or stops — the single biggest difference
@@ -29,6 +30,8 @@ export function CameraRig() {
   const tourActive = useSimStore((s) => s.tourActive);
   const tourIndex = useSimStore((s) => s.tourIndex);
   const recenterNonce = useSimStore((s) => s.recenterNonce);
+  const explainActive = useSimStore((s) => s.explainActive);
+  const explainIndex = useSimStore((s) => s.explainIndex);
 
   const tween = useRef({
     active: false,
@@ -39,7 +42,6 @@ export function CameraRig() {
     fromTarget: new THREE.Vector3(),
     toTarget: new THREE.Vector3(),
   });
-  const idleSince = useRef(0);
   const introDone = useRef(false);
 
   const play = (shot, duration) => {
@@ -71,10 +73,20 @@ export function CameraRig() {
   // is explicitly requested.
   useEffect(() => {
     if (!controls || !introDone.current) return;
-    if (!useSimStore.getState().tourActive) return;
+    const state = useSimStore.getState();
+    if (state.explainActive || !state.tourActive) return;
     play(stageAt(tourIndex).camera, STAGE_SECONDS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tourIndex, tourActive, recenterNonce]);
+
+  // The guided explanation's own shots. Slower than the rail's: this one is
+  // being talked over, and a move that lands before the sentence does leaves
+  // the camera sitting still through most of it.
+  useEffect(() => {
+    if (!controls || !introDone.current || !explainActive) return;
+    play(explainStepAt(explainIndex).camera, EXPLAIN_SECONDS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explainActive, explainIndex]);
 
   // Deliberately nothing here for viewMode.
   //
@@ -84,12 +96,11 @@ export function CameraRig() {
   // the visitor had chosen. The cross-fade does all the work; the camera
   // holds still.
 
-  // Any user input pauses the idle orbit, and cancels an in-flight move so
-  // the camera never fights the pointer.
+  // Any user input cancels an in-flight move, so the camera never fights the
+  // pointer.
   useEffect(() => {
     if (!controls) return;
     const onStart = () => {
-      idleSince.current = 0;
       tween.current.active = false;
     };
     controls.addEventListener("start", onStart);
@@ -106,30 +117,17 @@ export function CameraRig() {
       camera.position.lerpVectors(t.fromPos, t.toPos, k);
       controls.target.lerpVectors(t.fromTarget, t.toTarget, k);
       controls.update();
-      if (t.elapsed >= t.duration) {
-        t.active = false;
-        idleSince.current = 0;
-      }
+      if (t.elapsed >= t.duration) t.active = false;
       return;
     }
 
-    // Slow orbit while a stage sits untouched. It stops as soon as anyone
-    // grabs the model, and never runs over the schematic where a moving
-    // camera makes the readouts harder to follow.
-    idleSince.current += delta;
-    const state = useSimStore.getState();
-    const shouldOrbit =
-      state.viewMode === "exterior" && idleSince.current > IDLE_BEFORE_ORBIT;
-    if (shouldOrbit) {
-      // ease the orbit up to speed over its first couple of seconds
-      const ramp = Math.min(1, (idleSince.current - IDLE_BEFORE_ORBIT) / 2);
-      // gentler while a stage is framed — this is a slow drift around a
-      // subject, not a turntable spin of the whole plant
-      controls.autoRotateSpeed = (state.tourActive ? 0.16 : 0.28) * ramp;
-      controls.autoRotate = true;
-    } else {
-      controls.autoRotate = false;
-    }
+    // Nothing moves the camera on its own once a move has landed.
+    //
+    // There used to be a slow orbit here after a few seconds of no input. It
+    // demos well and presents badly: the model is talked over, and a view
+    // that drifts while someone is pointing at a part of it takes the thing
+    // they are pointing at away from them. The camera now goes exactly where
+    // it is sent and then holds, so a framing survives being explained.
     controls.update();
   });
 

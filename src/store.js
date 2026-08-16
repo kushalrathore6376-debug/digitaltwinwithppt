@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { VIEW_MODES } from "./scene/reveal.js";
 
 const FILL_SECONDS = 8; // pace of a chamber refilling its solvent
 const DRAIN_SECONDS = 2.5; // how fast a vessel empties once draining starts
@@ -40,10 +41,26 @@ const STORAGE_BATCH = 0.25;
 const DECOMP_DWELL = 6; // seconds a batch is stirred before discharging
 
 // Not all the solvent comes back — separation recovers about half of it, so
-// a closed loop would slowly run the recovered tank dry and starve the
-// chambers. A real plant tops up from a make-up drum; so does this one.
+// a closed loop would slowly run the inventory dry and starve the chambers.
+// A real plant tops up from a make-up drum; so does this one.
 const SOLVENT_MAKEUP = 0.02; // fill units per second
 const MAKEUP_BELOW = 0.55; // only tops up when the tank is below this
+// A drum being pumped in by hand arrives faster than the trickle the
+// automation uses, or the button feels broken.
+const MANUAL_MAKEUP_SCALE = 4;
+
+// The treatment chamber works its contents off continuously into the
+// inventory tank rather than in batches — it is a conditioning step, not
+// another vessel things queue in.
+const TREATMENT_RATE = 0.05; // fill units per second
+
+// Where the inventory tank counts as "full" for gating transfers into it.
+// This has to line up with what the panel actually displays (a whole-number
+// percentage), not sit at some tighter value like 0.999 — the panel rounds
+// to "100%" from 0.995 up, and a manual transfer that still succeeds while
+// the reading already says 100% looks broken even though, numerically,
+// there was a sliver of room left.
+export const INVENTORY_FULL = 0.995;
 
 // Filtration: how fast a batch separates, how much graphite a full batch
 // yields, and how much of the batch comes back as reusable solvent.
@@ -60,21 +77,34 @@ const COOL_RATE = 8;
 const TEMP_THRESHOLD = 80;
 
 export const useSimStore = create((set, get) => ({
-  // "exterior" = real-world skinned plant (the default public view),
-  // "cutaway" = the schematic X-ray showing the process internals.
-  viewMode: "exterior",
-  // Where the exterior/cutaway transition currently is. Only the layers
-  // this allows get mounted at all — a hidden layer still costs every
-  // useFrame its components registered, which on the schematic side means
-  // bubbles, flow dots and valve levers all animating behind an opaque
-  // shell nobody can see through.
-  revealPhase: "exterior", // "exterior" | "moving" | "cutaway"
+  // Three nested views, outermost first:
+  //   "container" = the sealed shipping container the unit is built into,
+  //   "exterior"  = the plant as built, with the box opened up around it,
+  //   "cutaway"   = the schematic X-ray showing the process internals.
+  // It opens sealed, because the first thing worth saying about this unit is
+  // that the whole of it fits in a box.
+  viewMode: "container",
+  // Where the reveal currently is. Only the layers this allows get mounted
+  // at all — a hidden layer still costs every useFrame its components
+  // registered, which on the schematic side means bubbles, flow dots and
+  // valve levers all animating behind a shell nobody can see through.
+  revealPhase: "container", // container | opening | exterior | cutting | cutaway
   setRevealPhase: (phase) =>
     set((state) => (state.revealPhase === phase ? state : { revealPhase: phase })),
-  // The plant runs on its own. There is no start button in the UI: this is
-  // a showcase, and a model that sits inert until you find a switch shows
-  // nothing. `setAutoRun` is still here for when a control unit needs it.
-  autoRun: true,
+  // Automatic mode: the plant sequences itself, start to finish. Off by
+  // default — every transfer then has to be asked for, one button at a time,
+  // which is how the unit gets explained to someone standing in front of it.
+  automate: false,
+
+  // ---- capture source ------------------------------------------------------
+  // The unit takes CO2 from one place at a time: the flue stack, or the air.
+  // They share the water column, the chambers and everything downstream of
+  // them, so running both at once would be two feeds into one column with no
+  // way to tell whose gas was whose — on screen it just read as everything
+  // moving at once. Picking one is also the honest operating case, and it is
+  // what makes the two lines worth showing separately at all.
+  gasIntake: true, // flue gas capture: the stack tap is open
+  dacRunning: false, // direct air capture: the roof fan bank is running
   temperature: 51,
   gasFlow: FLOW_LIMITS.nominal,
   error: null,
@@ -86,7 +116,8 @@ export const useSimStore = create((set, get) => ({
   // the chambers filled — the one moment a visitor is actually looking.
   storageFill: 0.28, // storage tank under the chambers, fed by their drains
   storageDraining: false, // transferring storage -> decomposition
-  decompFill: 0.22, // decomposition chamber level; the fan runs only when > 0
+  decompFill: 0.22, // decomposition chamber level
+  decompMotor: false, // the stirrer, which is what actually decomposes a batch
   decompDraining: false,
   // Filtration splits what leaves decomposition into solid graphite and
   // clean solvent. It fills as the decomposition chamber empties into it.
@@ -94,9 +125,15 @@ export const useSimStore = create((set, get) => ({
   decompDwell: 0, // seconds the current batch has been stirred
   filtrationRunning: false, // separating: graphite out, solvent to recovery
   graphiteYield: 96, // kg of graphite collected in the bin, cumulative
-  // Clean solvent has its own tank — it is not mixed back into the loaded
-  // stream in the storage tank. The chambers refill from here.
-  recoveredFill: 0.35,
+  // What the filter hands over is spent solvent, and it gets its own vessel
+  // to be treated in — it is never mixed back into the loaded stream in the
+  // storage tank.
+  treatmentFill: 0.3,
+  treatmentDraining: false, // treated solvent moving on to inventory
+  makeupRunning: false, // topping the inventory tank up from the make-up drum
+  // Treated solvent waiting to be used. This is the only tank the chambers
+  // are charged from.
+  inventoryFill: 0.45,
   solventFeeding: false, // feed line to the chambers is live
   transferQueued: false, // transfer requested while decomp was emptying
   chambers: {
@@ -107,31 +144,92 @@ export const useSimStore = create((set, get) => ({
     W: { phase: "holding", fill: WATER_LEVEL, saturation: 0 },
   },
 
-  setAutoRun: (value) => set({ autoRun: value }),
+  setAutomate: (value) => set({ automate: value }),
 
-  // ---- guided tour --------------------------------------------------------
-  // The walkthrough is on by default: for a visitor landing on the page it
-  // is the story, and free orbiting is the thing you opt into.
-  tourActive: true,
+  // The two capture systems interlock: switching one on switches the other
+  // off. Enforced here rather than in the panel so it holds however it is
+  // driven — the panel, the console handle, or a future tour step.
+  setGasIntake: (value) =>
+    set({ gasIntake: value, dacRunning: value ? false : get().dacRunning }),
+  setDacRunning: (value) =>
+    set({ dacRunning: value, gasIntake: value ? false : get().gasIntake }),
+
+  // The stirrer in the decomposition chamber. It is not decoration: a batch
+  // only breaks down while this is turning, and DECOMP_DWELL of it is what
+  // the discharge below waits for.
+  setDecompMotor: (value) =>
+    set((state) => {
+      if (value && state.decompFill <= 0.005) {
+        return {
+          error: "Decomposition chamber is empty — nothing to stir",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      return { decompMotor: value };
+    }),
+
+  // ---- stage rail ---------------------------------------------------------
+  // The model opens in free look. The rail down the left edge is a directory
+  // of the equipment rather than a walkthrough, so nothing is framed until
+  // someone asks for it — being flown somewhere before you have had a chance
+  // to look at the thing is the wrong first second.
+  tourActive: false,
   tourIndex: 0,
 
   setTourActive: (value) => set({ tourActive: value }),
+
+  // ---- guided explanation --------------------------------------------------
+  // The narrated run through the process, start to finish. It owns the camera,
+  // the view mode and which equipment is in focus while it runs, so it turns
+  // the stage rail off on the way in — two things steering the same camera
+  // from different indices is how a walkthrough ends up fighting itself.
+  explainActive: false,
+  explainIndex: 0,
+  explainPaused: false,
+
+  startExplain: () =>
+    set({
+      explainActive: true,
+      explainIndex: 0,
+      explainPaused: false,
+      tourActive: false,
+    }),
+  stopExplain: () => set({ explainActive: false, explainPaused: false }),
+  setExplainPaused: (value) => set({ explainPaused: value }),
+  // Clamped rather than wrapped, and running off the end stops it: an
+  // explanation that loops back to the beginning by itself leaves someone
+  // watching the same sentence twice wondering whether they missed the end.
+  goToExplainStep: (index, count) =>
+    set((state) => {
+      if (index >= count) return { explainActive: false, explainPaused: false };
+      const next = Math.max(0, index);
+      return next === state.explainIndex ? state : { explainIndex: next };
+    }),
 
   // Bumped to ask the camera rig for a move even when the stage index has
   // not changed — resetting from an already-current stage still has to fly
   // the camera back from wherever the visitor dragged it.
   recenterNonce: 0,
   requestRecenter: () => set((state) => ({ recenterNonce: state.recenterNonce + 1 })),
+  // Walking the tour opens the box. Every stage after the overview frames
+  // equipment that is inside it, and leaving the visitor to work out that
+  // they have to dismiss the container first would make the walkthrough
+  // look broken rather than sealed.
   goToStage: (index, count) =>
     set((state) => {
       const next = Math.min(count - 1, Math.max(0, index));
-      return next === state.tourIndex ? state : { tourIndex: next };
+      const viewMode =
+        next > 0 && state.viewMode === "container" ? "exterior" : state.viewMode;
+      if (next === state.tourIndex && viewMode === state.viewMode) return state;
+      return { tourIndex: next, viewMode };
     }),
 
   setViewMode: (mode) => set({ viewMode: mode }),
+  // Step one layer inward, wrapping back to the sealed box at the end
   toggleViewMode: () =>
     set((state) => ({
-      viewMode: state.viewMode === "exterior" ? "cutaway" : "exterior",
+      viewMode:
+        VIEW_MODES[(VIEW_MODES.indexOf(state.viewMode) + 1) % VIEW_MODES.length],
     })),
 
   // Flow is hard-clamped: past the max the line pressure would be unsafe
@@ -139,6 +237,38 @@ export const useSimStore = create((set, get) => ({
     set({
       gasFlow: Math.min(FLOW_LIMITS.max, Math.max(FLOW_LIMITS.min, value)),
     }),
+
+  // ---- the one interlock ---------------------------------------------------
+  // A vessel that is being filled cannot be drained at the same time. It is
+  // the only rule between vessels here, and it replaces a scatter of special
+  // cases that each read as its own arbitrary refusal.
+  //
+  // The reason it has to be a rule rather than a race is that most of the
+  // feeds in this plant are faster than the draws off them — separation puts
+  // solvent into the treatment chamber three times faster than treatment
+  // works it off. Opening the outlet mid-fill therefore did nothing visible:
+  // the valve swung, the level kept climbing, and the control looked broken.
+  //
+  // Every transfer can be stopped from the panel, so "stop the feed, then
+  // drain" is always available — which is the whole reason a refusal here is
+  // fair rather than a dead end.
+  isFilling: (vessel) => {
+    const state = get();
+    switch (vessel) {
+      case "storage":
+        return ["A", "B"].some((id) => state.chambers[id].phase === "draining");
+      case "decomp":
+        return state.storageDraining;
+      case "filtration":
+        return state.decompDraining;
+      case "treatment":
+        return state.filtrationRunning;
+      case "inventory":
+        return state.treatmentDraining || state.makeupRunning;
+      default:
+        return state.chambers[vessel]?.phase === "filling";
+    }
+  },
 
   setChamberFill: (id, value) =>
     set((state) => ({
@@ -153,6 +283,12 @@ export const useSimStore = create((set, get) => ({
   // flow to the other chamber.
   emptyChamber: (id) =>
     set((state) => {
+      if (state.chambers[id].phase === "filling") {
+        return {
+          error: `Chamber ${id} is being charged — stop the charge first`,
+          errorTimer: ERROR_SECONDS,
+        };
+      }
       if (
         id !== "W" &&
         state.storageFill + state.chambers[id].fill * STORAGE_FACTOR > 1.001
@@ -173,6 +309,26 @@ export const useSimStore = create((set, get) => ({
       return { chambers, activeChamber };
     }),
 
+  // Stop a chamber part-way through a charge or a drain, and leave it sitting
+  // at whatever level it reached. "idle" rather than "empty": a chamber halted
+  // half full is neither, and labelling it empty while the bar shows 40% is
+  // the kind of small lie that makes the whole panel untrustworthy.
+  haltChamber: (id) =>
+    set((state) => {
+      const chamber = state.chambers[id];
+      if (chamber.phase !== "filling" && chamber.phase !== "draining")
+        return state;
+      const phase =
+        id === "W"
+          ? "holding"
+          : chamber.fill >= CHAMBER_CAP - 1e-3
+            ? "ready"
+            : chamber.fill <= 0.005
+              ? "empty"
+              : "idle";
+      return { chambers: { ...state.chambers, [id]: { ...chamber, phase } } };
+    }),
+
   // Move the storage tank's contents into the decomposition chamber.
   // A new batch is only accepted when the decomposition chamber is
   // completely empty — one batch at a time. If it is busy emptying, the
@@ -180,6 +336,12 @@ export const useSimStore = create((set, get) => ({
   // any other leftover liquid just refuses with an error.
   transferStorage: () =>
     set((state) => {
+      if (get().isFilling("storage")) {
+        return {
+          error: "Storage tank is being filled — stop the chamber drain first",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
       if (state.decompDraining) {
         return {
           error:
@@ -198,14 +360,17 @@ export const useSimStore = create((set, get) => ({
       return { storageDraining: true };
     }),
 
-  // Run a separation cycle: graphite drops out to the bin and the recovered
-  // solvent goes back to the storage tank. Refused while the filter is
+  stopStorageTransfer: () => set({ storageDraining: false, transferQueued: false }),
+
+  // Run a separation cycle: graphite drops out to the bin and the spent
+  // solvent goes on to the treatment chamber. Refused while the filter is
   // still taking a batch in, or when there is nothing in it.
   runFiltration: () =>
     set((state) => {
-      if (state.decompDraining) {
+      if (get().isFilling("filtration")) {
         return {
-          error: "Batch still transferring in — wait for the filter to fill",
+          error:
+            "Filter is still being filled — stop the transfer from decomposition first",
           errorTimer: ERROR_SECONDS,
         };
       }
@@ -218,19 +383,142 @@ export const useSimStore = create((set, get) => ({
       return { filtrationRunning: true };
     }),
 
-  // The decomposition chamber only empties on demand, and never while a
-  // batch is still coming in from the storage tank
-  emptyDecomp: () =>
+  stopFiltration: () => set({ filtrationRunning: false }),
+
+  // Charge an absorption chamber from the inventory tank.
+  //
+  // With the process running this happens by itself; with it stopped this is
+  // the only way to get solvent into a chamber, which is the point — "process
+  // running" turns off the *sequencing*, not the plant. Every movement the
+  // automation makes has a button behind it.
+  chargeChamber: (id) =>
     set((state) => {
-      if (state.storageDraining) {
+      const chamber = state.chambers[id];
+      if (chamber.phase === "saturated") {
+        return {
+          error: `Chamber ${id} is saturated — empty it before charging`,
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (chamber.phase === "draining") {
+        return {
+          error: `Chamber ${id} is draining — wait for it to empty`,
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (chamber.fill >= CHAMBER_CAP - 1e-3) {
+        return {
+          error: `Chamber ${id} is already charged`,
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (state.inventoryFill <= 0.005) {
+        return {
+          error: "Solvent inventory is empty — add make-up solvent first",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (get().isFilling("inventory")) {
         return {
           error:
-            "Transfer from storage in progress — wait for the batch to finish",
+            "Solvent inventory is being filled — stop the transfer into it first",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      return {
+        chambers: { ...state.chambers, [id]: { ...chamber, phase: "filling" } },
+      };
+    }),
+
+  // Refill the water column to its working level
+  fillColumn: () =>
+    set((state) => {
+      const water = state.chambers.W;
+      if (water.phase === "draining") {
+        return {
+          error: "Water column is draining — wait for it to empty",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (water.fill >= WATER_LEVEL - 1e-3) {
+        return {
+          error: "Water column is already at its working level",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      return {
+        chambers: { ...state.chambers, W: { ...water, phase: "filling" } },
+      };
+    }),
+
+  // Work the treatment chamber's contents off into the inventory tank
+  drainTreatment: () =>
+    set((state) => {
+      if (get().isFilling("treatment")) {
+        return {
+          error:
+            "Treatment chamber is being filled — stop the separation first",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (state.treatmentFill <= 0.005) {
+        return {
+          error: "Treatment chamber is empty — nothing to transfer",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (state.inventoryFill >= INVENTORY_FULL) {
+        return {
+          error: "Solvent inventory is full",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      return { treatmentDraining: true };
+    }),
+
+  stopTreatmentTransfer: () => set({ treatmentDraining: false }),
+
+  // Top the inventory tank up from the make-up drum. Separation only recovers
+  // about half the solvent, so a closed loop runs dry eventually and something
+  // has to put the difference back.
+  addMakeup: () =>
+    set((state) => {
+      if (state.inventoryFill >= MAKEUP_BELOW) {
+        return {
+          error: "Solvent inventory is above the make-up level",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      return { makeupRunning: true };
+    }),
+
+  stopMakeup: () => set({ makeupRunning: false }),
+
+  // The decomposition chamber empties on demand. The only thing that stops it
+  // is the interlock — a batch still arriving from storage — and notably not
+  // the stirrer: the motor is its own control and this is its own control, and
+  // a button that refuses until you have used a different button is a button
+  // that reads as broken. Automatic mode still gives every batch its dwell
+  // under the stirrer; driving it by hand lets you skip that if you want to.
+  emptyDecomp: () =>
+    set((state) => {
+      if (get().isFilling("decomp")) {
+        return {
+          error:
+            "Batch still arriving from storage — stop the transfer in first",
+          errorTimer: ERROR_SECONDS,
+        };
+      }
+      if (state.decompFill <= 0.005) {
+        return {
+          error: "Decomposition chamber is empty — nothing to transfer",
           errorTimer: ERROR_SECONDS,
         };
       }
       return { decompDraining: true };
     }),
+
+  stopDecompTransfer: () => set({ decompDraining: false }),
 
   tick: (delta) => {
     const state = get();
@@ -240,10 +528,14 @@ export const useSimStore = create((set, get) => ({
     let storageDraining = state.storageDraining;
     let decompFill = state.decompFill;
     let decompDraining = state.decompDraining;
+    let decompMotor = state.decompMotor;
     let filtrationFill = state.filtrationFill;
     let filtrationRunning = state.filtrationRunning;
     let graphiteYield = state.graphiteYield;
-    let recoveredFill = state.recoveredFill;
+    let treatmentFill = state.treatmentFill;
+    let treatmentDraining = state.treatmentDraining;
+    let inventoryFill = state.inventoryFill;
+    let makeupRunning = state.makeupRunning;
     let solventFeeding = false;
     let decompDwell = state.decompDwell ?? 0;
     let temperature = state.temperature;
@@ -268,11 +560,49 @@ export const useSimStore = create((set, get) => ({
       let phase = "draining";
       let saturation = chamber.saturation;
       if (fill <= 0) {
-        phase = id === "W" ? "holding" : "filling";
+        // Idle, not refilling. It used to go straight back to "filling",
+        // which meant a chamber you emptied by hand immediately recharged
+        // itself — fine while the plant ran itself, useless the moment you
+        // wanted to drive it. Recharging is now something that is asked for,
+        // by the operator or by the automation below.
+        phase = id === "W" ? "holding" : "empty";
         saturation = 0; // fresh solvent
         if (id === "W") waterDumped = true;
       }
       chambers[id] = { ...chamber, fill, phase, saturation };
+    }
+
+    // Charging: any chamber marked "filling" draws from the inventory tank
+    // until it reaches its cap. Like every other transfer this sits in the
+    // always-on half of the tick, so it runs whether the plant is sequencing
+    // itself or being driven a button at a time.
+    for (const id of ["A", "B"]) {
+      const chamber = chambers[id];
+      if (chamber.phase !== "filling") continue;
+      const wanted = Math.min(CHAMBER_CAP, chamber.fill + delta / FILL_SECONDS);
+      const drawn = Math.min(wanted - chamber.fill, inventoryFill / STORAGE_FACTOR);
+      if (drawn > 0) {
+        inventoryFill = Math.max(0, inventoryFill - drawn * STORAGE_FACTOR);
+        solventFeeding = true;
+      }
+      const fill = chamber.fill + Math.max(0, drawn);
+      const full = fill >= CHAMBER_CAP - 1e-3;
+      chambers[id] = {
+        ...chamber,
+        fill,
+        phase: full ? (id === activeChamber ? "active" : "ready") : "filling",
+      };
+    }
+
+    // The water column tops up the same way
+    const filling = chambers.W;
+    if (filling.phase === "filling") {
+      const fill = Math.min(WATER_LEVEL, filling.fill + delta / FILL_SECONDS);
+      chambers.W = {
+        ...filling,
+        fill,
+        phase: fill >= WATER_LEVEL - 1e-3 ? "holding" : "filling",
+      };
     }
 
     // Storage -> decomposition transfer (also works while paused)
@@ -311,64 +641,76 @@ export const useSimStore = create((set, get) => ({
       }
     }
 
-    // Separation: the solid graphite drops to the bin and the recovered
-    // solvent goes back to the storage tank, so the loop actually closes.
+    // Separation: the solid graphite drops to the bin and the spent solvent
+    // goes on to the treatment chamber.
     if (filtrationRunning) {
       const separated = Math.min(FILTRATION_RATE * delta, filtrationFill);
       filtrationFill -= separated;
       graphiteYield += separated * GRAPHITE_PER_BATCH;
-      recoveredFill = Math.min(1, recoveredFill + separated * SOLVENT_RECOVERY);
+      treatmentFill = Math.min(1, treatmentFill + separated * SOLVENT_RECOVERY);
       if (filtrationFill <= 0.0005) {
         filtrationFill = 0;
         filtrationRunning = false;
       }
     }
 
-    // Dumping the water column cools the system back to room temperature
-    if (waterDumped) temperature = AMBIENT_TEMP;
-
-    if (!state.autoRun) {
-      if (!waterDumped) {
-        temperature = Math.max(AMBIENT_TEMP, temperature - COOL_RATE * delta);
+    // Treatment works off into the inventory tank. This is the link that
+    // closes the loop: nothing draws from the treatment chamber directly, the
+    // chambers only ever see treated solvent. It runs on a held flag rather
+    // than "whenever there is anything in there", so it can be started by
+    // hand and so the valve on it has a state to animate.
+    if (treatmentDraining) {
+      const moved = Math.min(
+        TREATMENT_RATE * delta,
+        treatmentFill,
+        1 - inventoryFill,
+      );
+      treatmentFill -= moved;
+      inventoryFill += moved;
+      if (treatmentFill <= 0.0005) {
+        treatmentFill = 0;
+        treatmentDraining = false;
+      } else if (inventoryFill >= INVENTORY_FULL) {
+        treatmentDraining = false;
+        error = "Solvent inventory full — charge a chamber first";
+        errorTimer = ERROR_SECONDS;
       }
-      set({
-        chambers,
-        storageFill,
-        storageDraining,
-        decompFill,
-        decompDraining,
-        filtrationFill,
-        filtrationRunning,
-        graphiteYield,
-        recoveredFill,
-        solventFeeding,
-        decompDwell,
-        transferQueued,
-        temperature,
-        error,
-        errorTimer,
-      });
-      return;
     }
 
-    // The water column heats only while gas bubbles through it. When flow is
-    // stopped (e.g. both chambers saturated) the temperature holds.
-    const gasMoving = chambers[activeChamber].phase === "active";
-    if (!waterDumped && gasMoving) {
-      temperature = Math.min(MAX_TEMP, temperature + HEAT_RATE * delta);
+    // Make-up solvent, from the drum into the inventory tank
+    if (makeupRunning) {
+      inventoryFill = Math.min(
+        MAKEUP_BELOW,
+        inventoryFill + SOLVENT_MAKEUP * MANUAL_MAKEUP_SCALE * delta,
+      );
+      if (inventoryFill >= MAKEUP_BELOW - 1e-4) makeupRunning = false;
     }
 
-    // At the temperature threshold the water column drains itself
-    if (temperature >= TEMP_THRESHOLD && chambers.W.phase !== "draining") {
-      chambers.W = { ...chambers.W, phase: "draining" };
-    }
+    // ---- what the plant does on its own -------------------------------------
+    // None of this is sequencing, so none of it waits for automatic mode.
+    // Driving the unit a button at a time still loads the working chamber,
+    // still heats the column and still works a batch under the stirrer;
+    // automatic mode only decides who presses the buttons that follow.
 
-    // Working chamber saturates while receiving gas — faster at higher flow,
-    // scaled by the CO2 fraction actually arriving. At full saturation the
-    // flow switches to the other chamber by itself, but the saturated solvent
-    // stays in place until emptied manually.
+    // One source at a time, and either counts as gas arriving: the stack tap
+    // and the fan bank feed the same water column.
+    //
+    // Gas moving and solvent loading are two different things, and the plant
+    // gets them wrong if they are one flag. An open tap pushes gas through the
+    // column and on into the duty chamber whether that chamber holds solvent
+    // or not — a blower does not wait to be told there is something to absorb
+    // into. What an empty chamber does *not* do is load, which is the second
+    // condition below.
+    const capturing = state.gasIntake || state.dacRunning;
+    const columnLive = capturing && chambers.W.fill > 0.05;
+
+    // The working chamber loads while it is receiving gas *and* has solvent in
+    // it — faster at higher flow, scaled by the CO2 fraction actually
+    // arriving. At full saturation the flow moves to the other chamber by
+    // itself, but the saturated solvent stays where it is until something
+    // empties it.
     const working = chambers[activeChamber];
-    if (working.phase === "active") {
+    if (capturing && working?.phase === "active") {
       const saturation = Math.min(
         1,
         working.saturation +
@@ -380,9 +722,64 @@ export const useSimStore = create((set, get) => ({
         saturation,
         phase: saturated ? "saturated" : "active",
       };
-      if (saturated) {
-        activeChamber = activeChamber === "A" ? "B" : "A";
-      }
+      if (saturated) activeChamber = activeChamber === "A" ? "B" : "A";
+    }
+
+    // The chamber taking over duty has usually been sitting there full
+    // ("ready") since well before the swap above — filling takes seconds,
+    // saturating takes tens of times longer. Nothing else promotes "ready" to
+    // "active": without this, gas never resumes into it and the process stalls
+    // one saturation cycle after it starts.
+    if (chambers[activeChamber]?.phase === "ready") {
+      chambers[activeChamber] = { ...chambers[activeChamber], phase: "active" };
+    }
+
+    // Column temperature: it climbs whenever gas is bubbling through water,
+    // whether or not a chamber is loading off it, and a dump takes it straight
+    // back to ambient.
+    if (waterDumped) temperature = AMBIENT_TEMP;
+    else if (columnLive)
+      temperature = Math.min(MAX_TEMP, temperature + HEAT_RATE * delta);
+    else temperature = Math.max(AMBIENT_TEMP, temperature - COOL_RATE * delta);
+
+    // Time under the stirrer is what decomposes a batch, and it is the only
+    // thing the discharge waits for. An empty chamber has nothing to stir, so
+    // the motor stops itself and the clock goes back to zero.
+    if (decompMotor && decompFill > 0.02) decompDwell += delta;
+    if (decompFill <= 0.02) {
+      decompDwell = 0;
+      decompMotor = false;
+    }
+
+    if (!state.automate) {
+      set({
+        chambers,
+        storageFill,
+        storageDraining,
+        decompFill,
+        decompMotor,
+        decompDraining,
+        filtrationFill,
+        filtrationRunning,
+        graphiteYield,
+        treatmentFill,
+        treatmentDraining,
+        inventoryFill,
+        makeupRunning,
+        solventFeeding,
+        decompDwell,
+        transferQueued,
+        temperature,
+        activeChamber,
+        error,
+        errorTimer,
+      });
+      return;
+    }
+
+    // At the temperature threshold the water column drains itself
+    if (temperature >= TEMP_THRESHOLD && chambers.W.phase !== "draining") {
+      chambers.W = { ...chambers.W, phase: "draining" };
     }
 
     // ---- automation -------------------------------------------------------
@@ -407,22 +804,25 @@ export const useSimStore = create((set, get) => ({
       storageDraining = true;
     }
 
-    // Decomposition stirs its batch for a while, then discharges to the
-    // filter. The dwell is what makes the stage read as a process step
-    // rather than a tank things pass straight through.
-    if (decompFill > 0.02 && !storageDraining && !decompDraining) {
-      decompDwell += delta;
-      if (decompDwell >= DECOMP_DWELL && filtrationFill <= 0.6) {
-        decompDraining = true;
-        decompDwell = 0;
-      }
-    } else if (decompFill <= 0.02) {
+    // Decomposition runs its stirrer on whatever it is holding, and discharges
+    // to the filter once the batch has had its time under it. The dwell is
+    // what makes the stage read as a process step rather than a tank things
+    // pass straight through; the clock itself runs in the always-on half.
+    decompMotor = decompFill > 0.02 && !storageDraining && !decompDraining;
+    if (decompMotor && decompDwell >= DECOMP_DWELL && filtrationFill <= 0.6) {
+      decompDraining = true;
       decompDwell = 0;
+      decompMotor = false;
     }
 
-    // Make-up solvent keeps the recovered tank from ever running empty
-    if (recoveredFill < MAKEUP_BELOW) {
-      recoveredFill = Math.min(MAKEUP_BELOW, recoveredFill + SOLVENT_MAKEUP * delta);
+    // The treatment chamber works itself off as soon as it has anything in it
+    if (treatmentFill > 0.005 && !treatmentDraining && inventoryFill < INVENTORY_FULL) {
+      treatmentDraining = true;
+    }
+
+    // Make-up solvent keeps the inventory tank from ever running empty
+    if (inventoryFill < MAKEUP_BELOW && !makeupRunning) {
+      makeupRunning = true;
     }
 
     // And the filter separates whatever it is holding as soon as the batch
@@ -431,38 +831,26 @@ export const useSimStore = create((set, get) => ({
       filtrationRunning = true;
     }
 
-    // Chambers refill solvent toward the cap; gas only reaches the working
-    // chamber once it is full, and a saturated chamber is skipped entirely
-    // until it gets drained.
+    // Chambers put themselves back on charge whenever they are idle and short
+    // of the cap. The charging itself happens above, in the always-on half —
+    // all this does is press the button.
     for (const id of ["A", "B"]) {
       const chamber = chambers[id];
-      if (chamber.phase === "draining" || chamber.phase === "saturated")
+      if (
+        chamber.phase === "draining" ||
+        chamber.phase === "saturated" ||
+        chamber.phase === "filling"
+      )
         continue;
-      // refilling draws from the recovered solvent tank, so the loop is
-      // closed on screen as well as on paper
-      const wanted = Math.min(CHAMBER_CAP, chamber.fill + delta / FILL_SECONDS);
-      const drawn = Math.min(wanted - chamber.fill, recoveredFill / STORAGE_FACTOR);
-      if (drawn > 0) {
-        recoveredFill = Math.max(0, recoveredFill - drawn * STORAGE_FACTOR);
-        solventFeeding = true;
+      if (chamber.fill < CHAMBER_CAP - 1e-3) {
+        chambers[id] = { ...chamber, phase: "filling" };
       }
-      const fill = chamber.fill + Math.max(0, drawn);
-      const full = fill >= CHAMBER_CAP - 1e-3;
-      chambers[id] = {
-        ...chamber,
-        fill,
-        phase: full ? (id === activeChamber ? "active" : "ready") : "filling",
-      };
     }
 
-    // Water column tops itself back up to its 70% working level
+    // And the water column puts itself back on fill after a dump
     const water = chambers.W;
-    if (water.phase !== "draining") {
-      chambers.W = {
-        ...water,
-        phase: "holding",
-        fill: Math.min(WATER_LEVEL, water.fill + delta / FILL_SECONDS),
-      };
+    if (water.phase === "holding" && water.fill < WATER_LEVEL - 1e-3) {
+      chambers.W = { ...water, phase: "filling" };
     }
 
     set({
@@ -470,11 +858,15 @@ export const useSimStore = create((set, get) => ({
       storageFill,
       storageDraining,
       decompFill,
+      decompMotor,
       decompDraining,
       filtrationFill,
       filtrationRunning,
       graphiteYield,
-      recoveredFill,
+      treatmentFill,
+      treatmentDraining,
+      inventoryFill,
+      makeupRunning,
       solventFeeding,
       decompDwell,
       transferQueued,
@@ -486,9 +878,19 @@ export const useSimStore = create((set, get) => ({
   },
 }));
 
-// True when gas is actually moving: process on and the working chamber full
-export const isGasFlowing = (s) =>
-  s.autoRun && s.chambers[s.activeChamber]?.phase === "active";
+// True when flue gas is moving: the stack tap is open, full stop. It used to
+// also require the duty chamber to be charged, which meant switching the
+// system on with empty chambers lit no line at all and read as a dead switch —
+// the tap is open, so the gas is in the pipe, through the column and into
+// whichever chamber is on duty. Whether that chamber *absorbs* any of it is a
+// separate question, answered by its own fill.
+//
+// Direct air capture running is not this — it is the other source, and it has
+// its own line.
+export const isGasFlowing = (s) => s.gasIntake;
+
+// True when either source is feeding the column, whichever one it is
+export const isCapturing = (s) => s.gasIntake || s.dacRunning;
 
 export const TEMP_LIMITS = {
   ambient: AMBIENT_TEMP,
@@ -498,6 +900,6 @@ export const TEMP_LIMITS = {
 
 // Dev-only handle so the running simulation can be inspected from the
 // console (and from automated checks) without wiring a debug UI.
-if (import.meta.env.DEV && typeof window !== "undefined") {
+if (import.meta.env?.DEV && typeof window !== "undefined") {
   window.__sim = useSimStore;
 }

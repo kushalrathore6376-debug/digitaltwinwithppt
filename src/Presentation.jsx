@@ -3,6 +3,8 @@ import "./presentation.css";
 import { IntroSlide } from "./slides/IntroSlide.jsx";
 import { DigitalTwinSlide } from "./slides/DigitalTwinSlide.jsx";
 import { ProductsSlide } from "./slides/ProductsSlide.jsx";
+import { ScaleupSlide } from "./slides/ScaleupSlide.jsx";
+import { PartnershipSlide } from "./slides/PartnershipSlide.jsx";
 import { TeamSlide } from "./slides/TeamSlide.jsx";
 import { FullscreenButton } from "./ui/FullscreenButton.jsx";
 
@@ -10,6 +12,8 @@ const SLIDES = [
   { id: "intro", label: "Intro" },
   { id: "twin", label: "Digital twin" },
   { id: "products", label: "Products" },
+  { id: "scaleup", label: "Scale-up" },
+  { id: "partnership", label: "Partnership" },
   { id: "team", label: "Team" },
 ];
 
@@ -150,6 +154,12 @@ export default function Presentation() {
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
             <ProductsSlide />
+          </div>
+          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+            <ScaleupSlide />
+          </div>
+          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+            <PartnershipSlide />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
             <TeamSlide />

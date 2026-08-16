@@ -7,13 +7,13 @@ import { BaseUnit } from "../components/BaseUnit.jsx";
 import { StorageTank } from "../components/StorageTank.jsx";
 import { PipeRun, Valve, Sparger, FlowDots } from "../components/Pipe.jsx";
 import { Bubbles, ColumnBubbles } from "../components/Bubbles.jsx";
-import { Smoke } from "../components/Smoke.jsx";
 import { Section } from "../tour/Section.jsx";
 import { SECTION } from "../tour/stages.js";
 import { useSimStore, isGasFlowing, GRAPHITE_PER_BATCH } from "../store.js";
 import {
-  BASE_HEIGHT,
-  BASE_RADIUS,
+  GRADE_HEIGHT,
+  GRADE_RADIUS,
+  GRADE_SKIRT,
   LIFT,
   WATER_HEIGHT,
   VESSEL_A_LOCAL,
@@ -25,8 +25,6 @@ import {
   columnDrainRoute,
   columnDrainValvePos,
   FILTRATION_POSITION,
-  FILTRATION_HEIGHT,
-  FILTRATION_RADIUS,
   GRAPHITE_BIN_POSITION,
   decompTransferRoute,
   DECOMP_TRANSFER_VALVE_POS,
@@ -35,22 +33,27 @@ import {
   solventFeedRoute,
   solventFeedBranchRoute,
   solventFeedTee,
+  solventFlowPath,
+  SOLVENT_A_VALVE_POS,
+  inventoryChargeRoute,
+  INVENTORY_CHARGE_VALVE_POS,
   SOLVENT_FEED_VALVE_POS,
   SOLVENT_RETURN_VALVE_POS,
-  RECOVERED_POSITION,
-  RECOVERED_HEIGHT,
-  RECOVERED_RADIUS,
+  TREATMENT_POSITION,
+  INVENTORY_POSITION,
   BASE_POSITION,
   DECOMP_POSITION,
-  DECOMP_HEIGHT,
-  DECOMP_RADIUS,
   storageTransferRoute,
   TRANSFER_VALVE_POS,
   drainRoute,
+  DAC_POSITION,
+  DAC_TOP_Y,
   CHIMNEY_X,
   CHIMNEY_TOP_Y,
+  CHIMNEY_RADIUS,
   BRANCH_TEE,
   gasSupplyRoute,
+  dacDuctRoute,
   gasMainRoute,
   gasBranchRoute,
   gasFlowPath,
@@ -300,6 +303,7 @@ export function CutawayLayer() {
         <PipeRun
           points={columnDrainRoute()}
           radius={0.11}
+          color="#b0c8db"
           liquidColor="#2a5d8f"
           flowSelector={(s) => s.chambers.W.phase === "draining"}
         />
@@ -318,17 +322,42 @@ export function CutawayLayer() {
       </Section>
 
       {/* --- source: the supply line off the stack. The chimney itself is
-          shared by both views — see Scene.jsx */}
+          shared by both views — see Scene.jsx, and its plume with it: the
+          stack is still emitting, whichever way the plant is being looked
+          at. */}
       <Section id={SECTION.SOURCE}>
-        <Label position={[CHIMNEY_X, CHIMNEY_TOP_Y - 2.6, 0]} radius={0.75}>
+        <Label
+          position={[CHIMNEY_X, CHIMNEY_TOP_Y - 7.5, 0]}
+          radius={CHIMNEY_RADIUS + 0.15}
+        >
           {"Flue Stack\n(gas source)"}
         </Label>
-        <Smoke position={[CHIMNEY_X, CHIMNEY_TOP_Y, 0]} />
         <PipeRun
           points={gasSupplyRoute()}
           {...GAS_PIPE}
           flowSelector={isGasFlowing}
         />
+      </Section>
+
+      {/* --- air capture: the roof fans and the header they push down into
+          the water column, alongside the flue line rather than merged with
+          it. Either source can run without the other. */}
+      <Section id={SECTION.DAC}>
+        <PipeRun
+          points={dacDuctRoute()}
+          radius={0.13}
+          color="#d6e2ee"
+          liquidColor="#cfe6f2"
+          flowCount={8}
+          flowSelector={(st) => st.dacRunning}
+        />
+        <Label
+          position={[DAC_POSITION[0], DAC_TOP_Y + 0.9, DAC_POSITION[2]]}
+          radius={1.9}
+          fontSize={0.24}
+        >
+          {"Air Capture Fans"}
+        </Label>
       </Section>
 
       {/* --- recovery: the buffer tank and the chamber drains feeding it.
@@ -337,19 +366,27 @@ export function CutawayLayer() {
           The drains merge at one junction after the valves and share a
           single drop, so B's run draws it and A's stops at the junction. */}
       <Section id={SECTION.STORAGE}>
-        <Label position={[BASE_POSITION[0], BASE_HEIGHT * 0.72, 0]} radius={BASE_RADIUS + 0.1}>
+        <Label position={[BASE_POSITION[0], GRADE_SKIRT + GRADE_HEIGHT * 0.74, 0]} radius={GRADE_RADIUS + 0.1}>
           {"Storage Tank"}
         </Label>
         <StorageTank
-          position={BASE_POSITION}
-          height={BASE_HEIGHT}
-          radius={BASE_RADIUS}
+          position={[BASE_POSITION[0], GRADE_SKIRT, BASE_POSITION[2]]}
+          height={GRADE_HEIGHT}
+          radius={GRADE_RADIUS}
         />
+        {/* a slight tint of each chamber's own liquid on the pipe wall
+            itself, so which drain belongs to which chamber reads even when
+            nothing is flowing through it */}
         <PipeRun
           points={drainRoute(VESSEL_A_LOCAL).slice(0, -1)}
+          color="#bcd6e3"
           showFlow={false}
         />
-        <PipeRun points={drainRoute(VESSEL_B_LOCAL)} showFlow={false} />
+        <PipeRun
+          points={drainRoute(VESSEL_B_LOCAL)}
+          color="#e8cea3"
+          showFlow={false}
+        />
         <FlowDots
           points={drainRoute(VESSEL_A_LOCAL)}
           radius={0.12}
@@ -378,16 +415,17 @@ export function CutawayLayer() {
 
       {/* --- decomposition: the stirred vessel and its transfer line */}
       <Section id={SECTION.DECOMPOSITION}>
-        <Label position={[DECOMP_POSITION[0], DECOMP_HEIGHT * 0.68, 0]} radius={DECOMP_RADIUS + 0.1}>
+        <Label position={[DECOMP_POSITION[0], GRADE_SKIRT + GRADE_HEIGHT * 0.74, 0]} radius={GRADE_RADIUS + 0.1}>
           {"Decomposition"}
         </Label>
         <BaseUnit
-          position={DECOMP_POSITION}
-          height={DECOMP_HEIGHT}
-          radius={DECOMP_RADIUS}
+          position={[DECOMP_POSITION[0], GRADE_SKIRT, DECOMP_POSITION[2]]}
+          height={GRADE_HEIGHT}
+          radius={GRADE_RADIUS}
         />
         <PipeRun
           points={storageTransferRoute()}
+          color="#b9c8d4"
           liquidColor="#4a6d8c"
           flowSelector={(s) => s.storageDraining}
         />
@@ -404,22 +442,23 @@ export function CutawayLayer() {
           to the storage tank, which is what closes the loop. */}
       <Section id={SECTION.FILTRATION}>
         <Label
-          position={[FILTRATION_POSITION[0], FILTRATION_HEIGHT * 0.7, 0]}
-          radius={FILTRATION_RADIUS + 0.1}
+          position={[FILTRATION_POSITION[0], GRADE_SKIRT + GRADE_HEIGHT * 0.74, 0]}
+          radius={GRADE_RADIUS + 0.1}
         >
           {"Filtration System"}
         </Label>
         <StorageTank
-          position={FILTRATION_POSITION}
-          height={FILTRATION_HEIGHT}
-          radius={FILTRATION_RADIUS}
+          position={[FILTRATION_POSITION[0], GRADE_SKIRT, FILTRATION_POSITION[2]]}
+          height={GRADE_HEIGHT}
+          radius={GRADE_RADIUS}
           fillSelector={(s) => s.filtrationFill}
-          liquidColor="#5a8f7b"
+          liquidColor="#7a9a4a"
           errorKeyword="Filtration"
         />
         <PipeRun
           points={decompTransferRoute()}
-          liquidColor="#12e4e4"
+          color="#cdeaf7"
+          liquidColor="#5bb8e0"
           flowSelector={(s) => s.decompDraining}
         />
         <Valve
@@ -445,11 +484,14 @@ export function CutawayLayer() {
           {"Graphite"}
         </Label>
 
-        {/* recovered solvent on the other side: into its own tank, and from
-            there back up to the absorption chambers */}
+        {/* spent solvent out the other side: into the treatment chamber,
+            and from there on to the inventory tank the chambers draw from */}
+        {/* filtration's own colour: this is what just left it, not what
+            the treatment chamber already holds */}
         <PipeRun
           points={solventReturnRoute()}
-          liquidColor="#7fb8a2"
+          color="#dbe6c8"
+          liquidColor="#7a9a4a"
           flowSelector={(s) => s.filtrationRunning}
         />
         <Valve
@@ -458,35 +500,115 @@ export function CutawayLayer() {
           yaw={Math.PI / 2}
           openSelector={(s) => s.filtrationRunning}
         />
+      </Section>
+
+      {/* --- treatment: what the filter hands over is spent, and is
+          conditioned here before it can be charged back into a chamber */}
+      <Section id={SECTION.TREATMENT}>
         <StorageTank
-          position={RECOVERED_POSITION}
-          height={RECOVERED_HEIGHT}
-          radius={RECOVERED_RADIUS}
-          fillSelector={(s) => s.recoveredFill}
-          liquidColor="#7fb8a2"
-          errorKeyword="Recovered"
+          position={[TREATMENT_POSITION[0], GRADE_SKIRT, TREATMENT_POSITION[2]]}
+          height={GRADE_HEIGHT}
+          radius={GRADE_RADIUS}
+          fillSelector={(s) => s.treatmentFill}
+          liquidColor="#2fae94"
+          errorKeyword="Treatment"
         />
         <Label
-          position={[RECOVERED_POSITION[0], RECOVERED_HEIGHT * 0.68, RECOVERED_POSITION[2]]}
-          radius={RECOVERED_RADIUS + 0.1}
+          position={[
+            TREATMENT_POSITION[0],
+            GRADE_SKIRT + GRADE_HEIGHT * 0.74,
+            TREATMENT_POSITION[2],
+          ]}
+          radius={GRADE_RADIUS + 0.1}
+          fontSize={0.24}
         >
-          {"Recovered Solvent"}
+          {"Spent Solvent\nTreatment Chamber"}
         </Label>
+        {/* treatment's own colour: the inventory tank picks up its own
+            shade only once this actually lands in it */}
+        <PipeRun
+          points={inventoryChargeRoute()}
+          radius={0.1}
+          color="#c8ece4"
+          liquidColor="#2fae94"
+          flowSelector={(s) => s.treatmentDraining}
+        />
+        <Valve
+          position={INVENTORY_CHARGE_VALVE_POS}
+          radius={0.1}
+          openSelector={(s) => s.treatmentDraining}
+        />
+      </Section>
+
+      {/* --- inventory: the only vessel the chambers are charged from */}
+      <Section id={SECTION.INVENTORY}>
+        {/* the inventory tank, and the feed out of its base up to the
+            chambers — the only route fresh solvent reaches them by */}
+        <StorageTank
+          position={[
+            INVENTORY_POSITION[0],
+            GRADE_SKIRT,
+            INVENTORY_POSITION[2],
+          ]}
+          height={GRADE_HEIGHT}
+          radius={GRADE_RADIUS}
+          fillSelector={(s) => s.inventoryFill}
+          liquidColor="#8fd0bb"
+          errorKeyword="Inventory"
+        />
+        <Label
+          position={[
+            INVENTORY_POSITION[0],
+            GRADE_SKIRT + GRADE_HEIGHT * 0.74,
+            INVENTORY_POSITION[2],
+          ]}
+          radius={GRADE_RADIUS + 0.1}
+        >
+          {"Solvent Inventory"}
+        </Label>
+        {/* the pipe geometry is static; which chamber it's actually
+            carrying solvent to is shown by the two FlowDots below, exactly
+            as the gas circuit shows it */}
         <PipeRun
           points={solventFeedRoute()}
-          liquidColor="#7fb8a2"
           radius={0.1}
-          flowSelector={(s) => s.solventFeeding}
+          color="#dbf0e4"
+          showFlow={false}
         />
         <PipeRun
           points={solventFeedBranchRoute()}
           radius={0.1}
+          color="#dbf0e4"
           showFlow={false}
+        />
+        <FlowDots
+          points={solventFlowPath("A")}
+          radius={0.1}
+          color="#8fd0bb"
+          selector={(s) => s.chambers.A.phase === "filling"}
+        />
+        <FlowDots
+          points={solventFlowPath("B")}
+          radius={0.1}
+          color="#8fd0bb"
+          selector={(s) => s.chambers.B.phase === "filling"}
         />
         <Valve
           position={SOLVENT_FEED_VALVE_POS}
           radius={0.1}
+          yaw={Math.PI / 2}
           openSelector={(s) => s.solventFeeding}
+        />
+        {/* one valve on the header, past the tee to B — closes off A alone.
+            B has no valve of its own here: it sits right at the tee, and a
+            second ball valve that close to the branch above an already-drawn
+            tee fitting doubled up on the same junction rather than reading
+            as two separate isolation points. */}
+        <Valve
+          position={SOLVENT_A_VALVE_POS}
+          radius={0.08}
+          lever="y"
+          openSelector={(s) => s.chambers.A.phase === "filling"}
         />
         <mesh position={solventFeedTee()} renderOrder={2}>
           <sphereGeometry args={[0.14, 14, 14]} />

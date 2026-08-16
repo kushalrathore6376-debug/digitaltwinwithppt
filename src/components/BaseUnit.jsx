@@ -17,14 +17,14 @@ export function BaseUnit({ position = [0, 0, 0], height, radius }) {
   const motorRef = useRef();
 
   // same tremble as the exterior motor, so the two views agree
-  useMachineIdle(motorRef, (s) => s.autoRun && s.decompFill > 0);
+  useMachineIdle(motorRef, (s) => s.decompMotor);
 
-  // Fan stirs the decomposition chamber, so it only spins while there is
-  // something in it (and the process is running). Liquid height tracks the
-  // live decomposition fill level.
+  // The stirrer turns when its motor is switched on — by the operator, or by
+  // the automation when it is driving. Liquid height tracks the live
+  // decomposition fill level.
   useFrame((_, delta) => {
-    const { autoRun, decompFill } = useSimStore.getState();
-    if (fanRef.current && autoRun && decompFill > 0) {
+    const { decompMotor, decompFill } = useSimStore.getState();
+    if (fanRef.current && decompMotor) {
       fanRef.current.rotation.y += delta * 6;
     }
     const liquid = liquidRef.current;
@@ -54,7 +54,7 @@ export function BaseUnit({ position = [0, 0, 0], height, radius }) {
         />
         {/* unlit so the color stays constant from every viewing angle */}
         <meshBasicMaterial
-          color="#12e4e4"
+          color="#5bb8e0"
           transparent
           opacity={0.5}
           depthWrite={false}

@@ -49,10 +49,11 @@ function Fallback() {
 
 // The carbon capture unit digital twin — display-only stop on the deck.
 // The deck already walks a visitor through the story slide by slide, so
-// this stop shows a single framing (the model's overview shot) rather than
-// its own guided walkthrough: exterior/cutaway toggle and free orbit still
-// work exactly as before, just without the stage stepper or its keyboard
-// shortcuts, which would otherwise fight the slide-to-slide arrow keys.
+// this stop shows a single framing (the model's overview shot, sealed
+// inside its shipping container) rather than its own guided walkthrough:
+// the container/exterior/cutaway toggle and free orbit still work exactly
+// as before, just without the stage stepper or its keyboard shortcuts,
+// which would otherwise fight the slide-to-slide arrow keys.
 export function DigitalTwinSlide() {
   const compact = useIsCompact();
   const setViewMode = useSimStore((s) => s.setViewMode);
@@ -92,7 +93,7 @@ export function DigitalTwinSlide() {
               height: "100%",
               display: "block",
             }}
-            camera={{ position: [19, 12, 25], fov: 40 }}
+            camera={{ position: [29, 18, 36], fov: 40 }}
             dpr={[1, compact ? 1.2 : 1.5]}
           >
             <Scene />
@@ -101,12 +102,14 @@ export function DigitalTwinSlide() {
               enableDamping
               dampingFactor={0.06}
               minDistance={7}
-              maxDistance={compact ? 46 : 38}
+              // the container and the wider stack put the far edge of the
+              // model a good deal further out than the bare plant did
+              maxDistance={compact ? 125 : 110}
               rotateSpeed={0.35}
               touches={{ ONE: 0, TWO: 2 }}
               zoomSpeed={compact ? 0.7 : 1}
               maxPolarAngle={Math.PI * 0.49}
-              target={[-1.2, 5.2, 0]}
+              target={[3.6, 7, 2]}
             />
           </Canvas>
         </CanvasErrorBoundary>
@@ -115,7 +118,10 @@ export function DigitalTwinSlide() {
           type="button"
           className="reset-view"
           onClick={() => {
-            setViewMode("exterior");
+            // "container" is the unit's opening state — sealed, the first
+            // thing worth saying about it — not "exterior", which is a step
+            // in from there.
+            setViewMode("container");
             requestRecenter();
           }}
           title="Back to the overview"

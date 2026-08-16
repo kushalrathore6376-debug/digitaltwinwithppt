@@ -4,7 +4,7 @@
 // frame, and pushing it through the store would re-render the tree on each
 // one. Components read it inside useFrame.
 
-import { STAGES, SECTION } from "./stages.js";
+import { SECTION } from "./stages.js";
 
 // How present an out-of-focus section stays. It is never hidden and never
 // made transparent — Section.jsx turns this into a colour shift toward the
@@ -31,14 +31,18 @@ export function setFocusEnabled(value) {
   enabled = value;
 }
 
-// Advance every section toward whether the given stage includes it. Called
-// once a frame by the tour driver.
-export function stepFocus(stageIndex, delta) {
-  const stage = STAGES[Math.min(STAGES.length - 1, Math.max(0, stageIndex))];
+// Advance every section toward whether the current subject includes it.
+// Called once a frame by the tour driver.
+//
+// It takes the list rather than an index into the stage rail, because there
+// are two things that can be driving it now — the rail and the guided
+// explanation — and they have separate step lists. A null list means
+// everything is the subject.
+export function stepFocus(sections, delta) {
   const step = delta / FOCUS_SECONDS;
 
   for (const id of Object.keys(focus)) {
-    const target = !enabled || stage.focus.includes(id) ? 1 : RECEDED;
+    const target = !enabled || !sections || sections.includes(id) ? 1 : RECEDED;
     const diff = target - focus[id];
     if (Math.abs(diff) <= step) focus[id] = target;
     else focus[id] += Math.sign(diff) * step;

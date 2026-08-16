@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useSimStore } from "../store.js";
-import { reveal, REVEAL_SECONDS } from "./reveal.js";
+import { reveal, REVEAL_SECONDS, STOPS, phaseOf } from "./reveal.js";
 
 // Advances the process simulation. One place owns the clock.
 function SimulationClock() {
@@ -22,7 +22,7 @@ function RevealDriver() {
   // It happened to work, but it is the kind of thing that breaks the moment
   // React renders twice or out of order.
   useEffect(() => {
-    reveal.target = viewMode === "cutaway" ? 1 : 0;
+    reveal.target = STOPS[viewMode] ?? STOPS.exterior;
   }, [viewMode]);
 
   useFrame((_, delta) => {
@@ -33,9 +33,7 @@ function RevealDriver() {
 
     // Publish only when it actually settles or starts moving — the setter
     // ignores no-op writes, so this costs nothing on the frames between.
-    setRevealPhase(
-      reveal.value === 0 ? "exterior" : reveal.value === 1 ? "cutaway" : "moving"
-    );
+    setRevealPhase(phaseOf(reveal.value, reveal.target));
   });
   return null;
 }
@@ -105,8 +103,18 @@ function RendererSetup() {
     // was desaturating the accent colours the whole look leans on.
     gl.toneMapping = THREE.NeutralToneMapping;
     gl.toneMappingExposure = 1.0;
-    // Fog does the depth cueing that ambient occlusion used to, for free.
-    scene.fog = new THREE.Fog("#12151b", 26, 72);
+    // Fog does the depth cueing that ambient occlusion used to, for free —
+    // and softens the ground pad's rim into the backdrop so it never reads
+    // as a turntable.
+    //
+    // The band has to sit *past* the model, not across it. It was 26..72,
+    // set when the plant was a bare skid about twenty units wide; the model
+    // is now around forty-six across with the stack, and the camera pulls
+    // back to seventy-two. That put the whole thing beyond the far plane at
+    // full zoom-out, where linear fog resolves to flat fog colour — so the
+    // plant turned solid black. Starting past the near side of the model at
+    // its usual framing keeps the cue without ever swallowing the subject.
+    scene.fog = new THREE.Fog("#12151b", 60, 280);
   }, [gl, scene]);
 
   return null;

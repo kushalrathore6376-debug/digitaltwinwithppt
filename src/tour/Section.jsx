@@ -41,7 +41,8 @@ export function Section({ id, children }) {
           material.userData.baseTransparent ??= material.transparent;
           material.userData.baseDepthWrite ??= material.depthWrite;
           // remember the authored colour so the tint can be reversed exactly
-          if (material.color) material.userData.baseColor ??= material.color.clone();
+          if (material.color)
+            material.userData.baseColor ??= material.color.clone();
           // claim it, so the layer wrapper leaves its opacity alone
           material.userData.sectionOwned = true;
           wired.current.add(material);
@@ -50,7 +51,8 @@ export function Section({ id, children }) {
         // puffs fading as they rise. Writing to those from here fights the
         // component that owns them and the result is whichever ran last,
         // which is why they read as solid blobs that pop instead of fading.
-        if (!material.userData.selfAnimatedOpacity) materials.current.push(material);
+        if (!material.userData.selfAnimatedOpacity)
+          materials.current.push(material);
       }
     });
   };
@@ -77,7 +79,8 @@ export function Section({ id, children }) {
 
     // catch anything that mounted late, but only while actually changing
     frame.current++;
-    if ((focus < 0.998 || layerAmount < 0.998) && frame.current % 20 === 0) wireUp();
+    if ((focus < 0.998 || layerAmount < 0.998) && frame.current % 20 === 0)
+      wireUp();
 
     for (const material of materials.current) {
       // opacity: layer cross-fade only
@@ -85,11 +88,13 @@ export function Section({ id, children }) {
       material.opacity = base * layerAmount;
       material.transparent =
         material.userData.baseTransparent || layerAmount < 0.998;
-      material.depthWrite = material.userData.baseDepthWrite && layerAmount > 0.5;
+      material.depthWrite =
+        material.userData.baseDepthWrite && layerAmount > 0.5;
 
       // focus: colour only, so nothing ever turns see-through
       const baseColor = material.userData.baseColor;
-      if (baseColor) material.color.copy(baseColor).lerp(RECEDE_TINT, 1 - focus);
+      if (baseColor)
+        material.color.copy(baseColor).lerp(RECEDE_TINT, 1 - focus);
     }
   });
 

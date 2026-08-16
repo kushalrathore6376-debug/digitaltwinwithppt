@@ -63,7 +63,7 @@ export function FlowDots({
   color,
   count = 7,
   speed = 1.2,
-  selector = (s) => s.autoRun,
+  selector = (s) => s.gasIntake,
 }) {
   const groupRef = useRef();
 
