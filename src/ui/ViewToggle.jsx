@@ -19,8 +19,13 @@ export function ViewToggle() {
   const index = Math.max(0, VIEW_MODES.indexOf(viewMode));
 
   return (
-    <div className="view-toggle" role="group" aria-label="Model view">
-      {VIEW_MODES.map((mode) => (
+    <div
+      className="view-toggle"
+      role="group"
+      aria-label="Model view"
+      style={{ "--view-index": index }}
+    >
+      {VIEW_MODES.map((mode, i) => (
         <button
           key={mode}
           type="button"
@@ -28,17 +33,15 @@ export function ViewToggle() {
           aria-pressed={mode === viewMode}
           onClick={() => setViewMode(mode)}
         >
-          {LABELS[mode]}
+          <span className="view-option-index">
+            {String(i + 1).padStart(2, "0")}
+          </span>
+          <span className="view-option-label">{LABELS[mode]}</span>
         </button>
       ))}
-      {/* the sliding pill sits under the labels and does the actual motion.
-          Its width is a third of the track, so the step is a whole multiple
-          of its own width whatever the labels say. */}
-      <span
-        className="view-thumb"
-        aria-hidden="true"
-        style={{ transform: `translateX(${index * 100}%)` }}
-      />
+      {/* Sliding peach chip + tricolour bar travel under the labels. */}
+      <span className="view-thumb" aria-hidden="true" />
+      <span className="view-rail" aria-hidden="true" />
     </div>
   );
 }

@@ -74,7 +74,7 @@ export function PartnershipSlide() {
           </p>
         </header>
 
-        <div className="stat-strip">
+        <div className="partnership-facts">
           {FACTS.map((f) => (
             <div className="stat-tile fact-tile" key={f.label}>
               <span className="stat-label fact-eyebrow">{f.label}</span>
