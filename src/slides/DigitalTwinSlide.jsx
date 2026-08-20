@@ -18,6 +18,10 @@ import { hasWebGL } from "../ui/hasWebGL.js";
 
 
 
+
+
+
+
 // Phones do the same work as a desktop on a fraction of the power budget,
 // and at 3x device pixel ratio they are shading nine times the fragments.
 // Capping the ratio is by far the cheapest win available; a 1.2x cap on a
