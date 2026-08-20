@@ -57,7 +57,7 @@ function Action({
 // `compact` is a phone: the drawer is a sheet across the bottom third of the
 // screen there, so a label that runs to three words costs a button's worth of
 // height. The long forms are kept for the desktop, where they earn their room.
-export function ControlPanel({ open, compact = false }) {
+export function ControlPanel({ open, onClose, compact = false }) {
   const s = useSimStore();
   const {
     chambers,
@@ -90,7 +90,19 @@ export function ControlPanel({ open, compact = false }) {
 
   return (
     <div className={`panel${open ? "" : " hidden"}`} aria-hidden={!open}>
-      <h2 className="panel-title">Digital Twin Controls</h2>
+      <div className="panel-header">
+        <h2 className="panel-title">Digital Twin Controls</h2>
+        {onClose && (
+          <button
+            type="button"
+            className="panel-close"
+            onClick={onClose}
+            aria-label="Close controls"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
+      </div>
       <p className="panel-subtitle">
         A live virtual replica of the gas-capture unit. Automate it and it
         sequences itself; leave that off and every transfer in the plant is

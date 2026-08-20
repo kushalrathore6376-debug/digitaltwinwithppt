@@ -12,8 +12,8 @@ export function PanelToggle({ open, onToggle }) {
       aria-pressed={open}
       aria-label={open ? "Hide controls" : "Show controls"}
     >
-      <span aria-hidden="true">☰</span>
-      <span className="panel-toggle-label">Controls</span>
+      <span aria-hidden="true">{open ? "×" : "☰"}</span>
+      <span className="panel-toggle-label">{open ? "Close" : "Controls"}</span>
     </button>
   );
 }

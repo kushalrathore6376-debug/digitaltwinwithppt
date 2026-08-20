@@ -70,6 +70,17 @@ export function DigitalTwinSlide() {
   // Closed by default: the model is the point, and the instrumentation
   // drawer covers nearly half of it.
   const [panelOpen, setPanelOpen] = useState(false);
+  const closePanel = () => setPanelOpen(false);
+
+  // Escape closes the drawer — same as the × on the panel header.
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closePanel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelOpen]);
 
   // On a phone the drawer is a sheet along the bottom rather than a panel
   // over the model, and the canvas gives up the height rather than being
@@ -134,7 +145,11 @@ export function DigitalTwinSlide() {
         {!explainActive && <ResetView />}
         {!explainActive && <TourOverlay />}
         <ExplainOverlay />
-        <ControlPanel open={panelOpen && !explainActive} compact={compact} />
+        <ControlPanel
+          open={panelOpen && !explainActive}
+          onClose={closePanel}
+          compact={compact}
+        />
       </div>
     </div>
   );
