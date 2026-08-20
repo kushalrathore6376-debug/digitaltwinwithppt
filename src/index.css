@@ -193,15 +193,8 @@ body,
   bottom: 0.32rem;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--tx-orange) 0%,
-    #e8a020 48%,
-    var(--tx-green) 100%
-  );
-  box-shadow:
-    0 0 10px rgba(240, 120, 24, 0.35),
-    0 0 5px rgba(18, 138, 8, 0.2);
+  background: var(--tx-green);
+  box-shadow: 0 0 8px rgba(18, 138, 8, 0.35);
 }
 
 /* Quiet baseline under the whole switch (inactive segments) */
