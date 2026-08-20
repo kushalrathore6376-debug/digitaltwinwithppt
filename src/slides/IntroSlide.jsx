@@ -125,6 +125,13 @@ export function IntroSlide({ onExplore }) {
               <li className="sdg-tile">
                 <img
                   className="sdg-icon"
+                  src="/sdg/sdg-11.png"
+                  alt="UN SDG 11: Sustainable Cities and Communities"
+                />
+              </li>
+              <li className="sdg-tile">
+                <img
+                  className="sdg-icon"
                   src="/sdg/sdg-12.png"
                   alt="UN SDG 12: Responsible Consumption and Production"
                 />
