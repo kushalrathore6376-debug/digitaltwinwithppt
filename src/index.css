@@ -1,0 +1,1061 @@
+:root {
+  /* Presentation chrome (nav bar, intro/products/team slides) and the
+     digital twin's own floating glass controls now read the same light,
+     premium palette — ivory paper, saffron and India-green accents, one
+     refined surface for the whole deck. The tricolour runs through the
+     hairlines, gradients and active controls; the flag is used as a
+     colour system, not a sticker. */
+  --bg: #faf8f3;
+  --bg-2: #f0ede4;
+  --panel-bg: #ffffff;
+  --panel-border: rgba(28, 26, 22, 0.12);
+  --card-bg: #ffffff;
+  --text: #26231e;
+  --text-dim: #6e675e;
+  --accent: #f07818;
+  --accent-soft: rgba(240, 120, 24, 0.14);
+  --green: #128a08;
+  --green-soft: rgba(18, 138, 8, 0.13);
+  --amber: #c08a2d;
+  --tx-orange: #f07818;
+  --tx-green: #128a08;
+  /* rich gold for the premium underside of things */
+  --gold: #c8932e;
+  --shadow-soft: rgba(66, 51, 24, 0.12);
+  --shadow-mid: rgba(66, 51, 24, 0.18);
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+html,
+body,
+#root {
+  width: 100vw;
+  margin: 0;
+  height: 100vh;
+  height: 100dvh; /* accounts for mobile browser chrome so nothing overflows */
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.canvas-wrap {
+  flex: 1;
+  height: 100%;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; /* anchors the view toggle over the canvas */
+  /* A flex item's default min-width is its min-content size, which here is
+     the <canvas> element's own pixel width. Once the panel collapsed and
+     the canvas grew to fill the row, that floor grew with it and the panel
+     could never take its width back — it reopened as a 40px sliver. */
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Container / Exterior / Cutaway — same language as the presentation nav:
+   numbered steps, soft saffron active chip, orange→green brand hairline.
+   Left to right peels inward: sealed box → plant as built → schematic. */
+.view-toggle {
+  position: absolute;
+  top: 1.05rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.35rem 0.4rem 0.5rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(28, 26, 22, 0.05);
+  z-index: 5;
+}
+
+.view-toggle-track {
+  display: flex;
+  align-items: stretch;
+  gap: 0.2rem;
+}
+
+.view-option {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.48rem 0.95rem;
+  border-radius: 12px;
+  font: inherit;
+  color: rgba(38, 35, 30, 0.45);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.view-option:hover:not(.active) {
+  color: var(--text);
+  background: rgba(38, 35, 30, 0.05);
+}
+
+.view-option.passed {
+  color: rgba(38, 35, 30, 0.62);
+}
+
+.view-option.active {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(240, 120, 24, 0.18);
+}
+
+.view-option-index {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.view-option.active .view-option-index {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.view-option-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.view-toggle-progress {
+  position: relative;
+  height: 2px;
+  margin: 0 0.55rem;
+  border-radius: 999px;
+  background: rgba(28, 26, 22, 0.08);
+  overflow: hidden;
+}
+
+.view-toggle-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  /* brand signature used across the deck — saffron into India green */
+  background: linear-gradient(90deg, var(--tx-orange), var(--tx-green));
+  transition: width 0.55s cubic-bezier(0.34, 1.2, 0.5, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-option,
+  .view-toggle-progress-fill {
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+  }
+}
+
+/* ---- guided walkthrough ---------------------------------------------- */
+
+/* The overlay never swallows pointer input as a whole — only its actual
+   controls do — so the model stays draggable underneath it. */
+.tour {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tour button {
+  pointer-events: auto;
+}
+
+/* Stage rail down the left edge — the whole overlay. Quiet dots until you
+   hover it, then a directory of everything in the plant. */
+.tour-rail {
+  position: absolute;
+  top: 50%;
+  left: 1.6rem;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-step {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.34rem 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(38, 35, 30, 0.38);
+  transition: color 0.4s ease;
+}
+
+.tour-step:hover,
+.tour-step.current {
+  color: rgba(38, 35, 30, 0.92);
+}
+
+.tour-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  flex: none;
+  transition:
+    background-color 0.4s ease,
+    box-shadow 0.4s ease,
+    transform 0.4s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.tour-step.current .tour-step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.35);
+  box-shadow: 0 0 0 5px var(--accent-soft);
+}
+
+/* Labels stay hidden until the rail is hovered, so the default state is just
+   a row of quiet dots rather than a menu competing with the model. */
+.tour-step-label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.tour-rail:hover .tour-step-label,
+.tour-step.current .tour-step-label {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- 3D unavailable fallback ---------------------------------------------- */
+
+.twin-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.twin-fallback img {
+  width: 12rem;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 20px 50px var(--shadow-soft);
+}
+
+.twin-fallback h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.twin-fallback p {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+/* ---- 3D load failure (genuine render crash, not WebGL unavailability) --- */
+
+.canvas-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.canvas-error p {
+  margin: 0;
+  max-width: 30rem;
+}
+
+.canvas-error-detail {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* ---- reset view ------------------------------------------------------- */
+
+.reset-view {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.4rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  appearance: none;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.reset-view:hover {
+  background: rgba(38, 35, 30, 0.08);
+  color: var(--text);
+}
+
+/* ---- compact screens --------------------------------------------------- */
+
+/* Phones and small tablets. The rail goes horizontal under the toggle, and
+   every control grows to a comfortable touch target. */
+@media (max-width: 900px) {
+  .tour-rail {
+    top: 4.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row;
+    gap: 0.65rem;
+  }
+
+  .tour-step {
+    /* a 9px dot is not a tap target; pad it out to ~40px without moving it */
+    padding: 0.6rem 0.35rem;
+  }
+
+  .tour-step-label {
+    display: none;
+  }
+
+  .view-toggle {
+    top: 0.7rem;
+    padding: 0.28rem 0.3rem 0.4rem;
+    border-radius: 14px;
+    gap: 0.35rem;
+  }
+
+  .view-option {
+    padding: 0.42rem 0.5rem;
+    gap: 0.3rem;
+    border-radius: 10px;
+  }
+
+  .view-option-index {
+    font-size: 0.6rem;
+  }
+
+  .view-option-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+  }
+
+  .view-toggle-progress {
+    margin: 0 0.35rem;
+  }
+
+  .reset-view {
+    top: 0.72rem;
+    right: 0.7rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0;
+    gap: 0;
+    min-height: 40px;
+  }
+
+  .reset-view svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+/* Very short viewports — a phone in landscape. The rail is the first thing
+   to give way; the model is what people came for. */
+@media (max-height: 480px) {
+  .tour-rail {
+    display: none;
+  }
+}
+
+/* ---- control panel ---------------------------------------------------- */
+/*
+   The instrumentation drawer. It was a fixed column beside the render until
+   the model grew wide enough to need the whole window; it is a drawer over
+   the canvas now, toggled from the button beside the view switch, and
+   everything inside it is unchanged from when it was a column.
+*/
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(620px, 44vw);
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  padding-top: 4.2rem;
+  background: linear-gradient(180deg, var(--panel-bg), var(--bg-2));
+  border-left: 1px solid var(--panel-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  align-content: start;
+  z-index: 6;
+  /* Slides rather than pops. It covers nearly half the render, so it has to
+     read as a drawer being pulled out over the model — appearing instantly
+     looks like the scene was replaced. */
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel.hidden {
+  transform: translateX(100%);
+  /* nothing inside a closed drawer should be tabbable */
+  visibility: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.4s;
+}
+
+.panel-title,
+.panel-subtitle,
+.error-banner,
+.run-toggle,
+.panel-footer {
+  grid-column: 1 / -1;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.panel-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.run-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+}
+
+.run-toggle span {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.toggle-btn {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  background: #d8d2c6;
+  transition: background 0.2s ease;
+}
+
+.toggle-btn::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px var(--shadow-soft);
+  transition: transform 0.2s ease;
+}
+
+.toggle-btn.on {
+  background: var(--green);
+}
+
+.toggle-btn.on::after {
+  transform: translateX(20px);
+}
+
+.chamber-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.chamber-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.chamber-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.phase-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.phase-badge.capturing {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.phase-badge.regenerating {
+  color: var(--amber);
+  background: rgba(217, 154, 61, 0.14);
+}
+
+.phase-badge.draining {
+  color: #e2574e;
+  background: rgba(226, 87, 78, 0.14);
+}
+
+.phase-badge.filling,
+.phase-badge.holding {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.phase-badge.active {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.phase-badge.ready,
+.phase-badge.standby {
+  color: var(--text-dim);
+  background: rgba(154, 163, 176, 0.18);
+}
+
+.temp-fill.decomp {
+  background: linear-gradient(90deg, var(--accent), var(--green));
+}
+
+.temp-fill.sat {
+  background: linear-gradient(90deg, var(--amber), #e2574e);
+}
+
+.phase-badge.saturated {
+  color: #e2574e;
+  background: rgba(226, 87, 78, 0.14);
+}
+
+.error-banner {
+  background: rgba(181, 59, 49, 0.1);
+  border: 1px solid rgba(181, 59, 49, 0.45);
+  color: #b53b31;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.temp-hint.warn {
+  color: #b53b31;
+}
+
+.sat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+}
+
+.sat-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.sat-bar {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.temp-card {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.temp-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--green);
+}
+
+.temp-value.hot {
+  color: #e2574e;
+}
+
+.temp-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: #e3ddd1;
+  overflow: visible;
+  margin-bottom: 0.6rem;
+}
+
+.temp-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--amber));
+  transition: width 0.2s linear;
+}
+
+.temp-fill.hot {
+  background: linear-gradient(90deg, var(--amber), #e2574e);
+}
+
+.temp-threshold {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: #e2574e;
+  border-radius: 1px;
+}
+
+.temp-hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.empty-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b53b31;
+  background: rgba(181, 59, 49, 0.1);
+  border: 1px solid rgba(181, 59, 49, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.empty-btn:hover:not(:disabled) {
+  background: rgba(181, 59, 49, 0.2);
+}
+
+.empty-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.fill-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fill-value {
+  min-width: 3ch;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* A level bar sitting where a slider would: it has to take the row's spare
+   width, or it collapses to its content. */
+.fill-row .temp-bar {
+  flex: 1;
+}
+
+/* Drawer handle, on the left of the render so it never sits under the
+   drawer it opens. */
+.panel-toggle {
+  position: absolute;
+  top: 1.1rem;
+  left: 1.1rem;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  appearance: none;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 34px var(--shadow-soft);
+  transition:
+    color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.panel-toggle:hover {
+  color: var(--text);
+}
+
+.panel-toggle.on {
+  background: rgba(38, 35, 30, 0.9);
+  border-color: transparent;
+  color: #faf8f3;
+}
+
+/* Phones. The drawer was full width *and* full height here, which is to say
+   it replaced the model with a wall of controls — on the one device where the
+   model is hardest to see in the first place. It is a bottom sheet now: the
+   canvas above it shrinks to two thirds rather than being covered, so the
+   plant is still there while you drive it.
+
+   Everything explanatory inside it goes as well. The hints and captions are
+   worth their space on a desktop, where they sit beside the model rather than
+   in front of it; on a phone they are the difference between four controls
+   visible and one. */
+@media (max-width: 820px) {
+  .canvas-wrap.split {
+    height: 66dvh;
+  }
+
+  .panel {
+    /* Fixed to the viewport, not absolute inside the canvas.
+       .canvas-wrap is the containing block for the desktop drawer, which is
+       what it should be there — the drawer slides over the render. Here the
+       canvas has just given up a third of its height, so anchoring to it put
+       the sheet inside the *remaining* two thirds and left the real bottom
+       third as empty page: a black band under a squashed panel. The sheet
+       belongs to the window, so it is positioned against the window. */
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 34dvh;
+    padding: 0.7rem 0.75rem 0.9rem;
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    overscroll-behavior: contain;
+  }
+
+  .panel.hidden {
+    transform: translateY(100%);
+  }
+
+  /* less to read, more to press */
+  .panel .panel-subtitle,
+  .panel .temp-hint,
+  .panel .panel-footer,
+  .panel .sat-label {
+    display: none;
+  }
+
+  .panel-title {
+    grid-column: 1 / -1;
+    font-size: 0.9rem;
+  }
+
+  .chamber-card,
+  .temp-card {
+    padding: 0.55rem 0.6rem 0.6rem;
+  }
+
+  .chamber-name {
+    font-size: 0.72rem;
+  }
+
+  .act-btn,
+  .empty-btn {
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .run-toggle {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .panel-toggle {
+    top: 0.7rem;
+    left: 0.7rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .panel-toggle-label {
+    display: none;
+  }
+}
+
+/* Two actions on one vessel card — charge and empty, sitting side by side */
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.btn-row > * {
+  flex: 1 1 0;
+  margin-top: 0;
+}
+
+/* The positive half of a pair: start a transfer, rather than dump a vessel.
+   Same shape as .empty-btn, in the accent instead of the warning colour. */
+.act-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(240, 120, 24, 0.45);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.act-btn:hover:not(:disabled) {
+  background: rgba(240, 120, 24, 0.24);
+}
+
+.act-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Empty, and stopped part-way — both are "this vessel is doing nothing",
+   which is the one thing the badge needs to say. */
+.phase-badge.empty,
+.phase-badge.idle {
+  background: rgba(154, 163, 176, 0.2);
+  color: var(--text-dim);
+}
+
+/* ---- guided explanation ----------------------------------------------- */
+
+/* The button that starts it. Bottom left, where nothing else lives, and away
+   from the three controls clustered along the top edge — this is the one
+   invitation on screen rather than another switch. */
+.explain-start {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  min-height: 40px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(240, 120, 24, 0.45);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px var(--shadow-soft);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.explain-start:hover {
+  background: var(--accent-soft);
+  border-color: rgba(240, 120, 24, 0.8);
+}
+
+/* The caption. Full width of the frame's centre, pinned to the bottom, and
+   never wider than a comfortable line length. */
+.explain {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 1.6rem));
+  z-index: 8;
+  pointer-events: none;
+}
+
+.explain-card {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 0.9rem 1rem 0.75rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px var(--shadow-soft);
+}
+
+.explain-progress {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(28, 26, 22, 0.1);
+  overflow: hidden;
+  margin-bottom: 0.7rem;
+}
+
+.explain-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  /* stepped by an interval, so it is eased across the gaps between ticks */
+  transition: width 0.1s linear;
+}
+
+.explain-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.explain-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+}
+
+.explain-count {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.explain-buttons {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.explain-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--text);
+  background: rgba(28, 26, 22, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.explain-buttons button:hover:not(:disabled) {
+  background: rgba(28, 26, 22, 0.12);
+}
+
+.explain-buttons button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 820px) {
+  .explain-start {
+    left: 0.7rem;
+    bottom: 0.7rem;
+  }
+
+  .explain {
+    bottom: 0.7rem;
+    width: calc(100% - 1.4rem);
+  }
+
+  .explain-card {
+    padding: 0.75rem 0.8rem 0.6rem;
+  }
+
+  .explain-text {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+}
+
+/* A phone in landscape has no room for a five-line caption; trim it to two
+   and let the model keep the frame. */
+@media (max-height: 480px) {
+  .explain-text {
+    font-size: 0.78rem;
+    max-height: 3.2em;
+    overflow-y: auto;
+  }
+}
