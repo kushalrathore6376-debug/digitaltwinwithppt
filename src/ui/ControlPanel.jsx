@@ -90,19 +90,18 @@ export function ControlPanel({ open, onClose, compact = false }) {
 
   return (
     <div className={`panel${open ? "" : " hidden"}`} aria-hidden={!open}>
-      <div className="panel-header">
-        <h2 className="panel-title">Digital Twin Controls</h2>
-        {onClose && (
-          <button
-            type="button"
-            className="panel-close"
-            onClick={onClose}
-            aria-label="Close controls"
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        )}
-      </div>
+      {onClose && (
+        <button
+          type="button"
+          className="panel-close"
+          onClick={onClose}
+          aria-label="Close controls"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      )}
+      <div className="panel-body">
+      <h2 className="panel-title">Digital Twin Controls</h2>
       <p className="panel-subtitle">
         A live virtual replica of the gas-capture unit. Automate it and it
         sequences itself; leave that off and every transfer in the plant is
@@ -362,6 +361,7 @@ export function ControlPanel({ open, onClose, compact = false }) {
         absorption chamber → storage → decomposition → filtration → treatment →
         inventory, and back to the chambers.
       </p>
+      </div>
     </div>
   );
 }

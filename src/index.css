@@ -494,16 +494,10 @@ body,
   right: 0;
   width: min(620px, 44vw);
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   box-sizing: border-box;
-  padding: 1.25rem;
-  padding-top: 4.2rem;
   background: linear-gradient(180deg, var(--panel-bg), var(--bg-2));
   border-left: 1px solid var(--panel-border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.8rem;
-  align-content: start;
   z-index: 6;
   /* Slides rather than pops. It covers nearly half the render, so it has to
      read as a drawer being pulled out over the model — appearing instantly
@@ -521,6 +515,18 @@ body,
     visibility 0s linear 0.4s;
 }
 
+.panel-body {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  align-content: start;
+}
+
 .panel-title,
 .panel-subtitle,
 .error-banner,
@@ -529,29 +535,20 @@ body,
   grid-column: 1 / -1;
 }
 
-.panel-header {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  position: sticky;
-  top: -0.15rem;
-  z-index: 2;
-  margin: -0.25rem 0 0.15rem;
-  padding: 0.35rem 0 0.55rem;
-  background: linear-gradient(180deg, var(--panel-bg) 70%, transparent);
-}
-
 .panel-title {
   margin: 0;
+  padding-right: 2.75rem; /* room for the absolute close button */
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
+/* Pinned to the drawer shell — stays put while .panel-body scrolls */
 .panel-close {
-  flex: none;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
   width: 36px;
   height: 36px;
   display: inline-flex;
@@ -565,6 +562,7 @@ body,
   font-size: 1.45rem;
   line-height: 1;
   cursor: pointer;
+  box-shadow: 0 4px 14px var(--shadow-soft);
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
@@ -903,12 +901,13 @@ body,
     right: 0;
     width: 100%;
     height: 34dvh;
-    padding: 0.7rem 0.75rem 0.9rem;
     border-left: none;
     border-top: 1px solid var(--panel-border);
-    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel-body {
+    padding: 0.7rem 0.75rem 0.9rem;
     gap: 0.5rem;
-    overscroll-behavior: contain;
   }
 
   .panel.hidden {
@@ -925,21 +924,15 @@ body,
 
   .panel-title {
     font-size: 0.9rem;
+    padding-right: 2.5rem;
   }
 
   .panel-close {
+    top: 0.65rem;
+    right: 0.65rem;
     width: 32px;
     height: 32px;
     font-size: 1.3rem;
-  }
-
-  .panel-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    margin: -0.1rem 0 0.15rem;
-    padding-bottom: 0.25rem;
-    background: linear-gradient(180deg, var(--panel-bg), var(--bg-2));
   }
 
   .chamber-card,
