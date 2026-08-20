@@ -568,47 +568,50 @@
   color: var(--tx-green);
 }
 
+.intro-sdg {
+  flex: 1 1 20rem;
+  max-width: 32rem;
+  min-width: 0;
+  width: 100%;
+}
+
 .sdg-grid {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(4, minmax(84px, 1fr));
-  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 28rem;
 }
 
 .sdg-tile {
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  box-shadow: 0 10px 24px var(--shadow-soft);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.sdg-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px var(--shadow-mid);
+}
+
+.sdg-icon {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: cover;
   border-radius: 10px;
-  padding: 0.6rem 0.55rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  line-height: 1.25;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-}
-
-.sdg-num {
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-
-.sdg-9 {
-  background: #f36d25;
-}
-
-.sdg-11 {
-  background: #fd9d24;
-}
-
-.sdg-12 {
-  background: #bf8b2e;
-}
-
-.sdg-13 {
-  background: #3f7e44;
 }
 
 /* ---- shared inner-slide layout ------------------------------------------ */
@@ -2061,7 +2064,15 @@
   }
 
   .sdg-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: none;
+    width: 100%;
+    gap: 0.7rem;
+  }
+
+  .intro-sdg {
+    max-width: none;
+    width: 100%;
   }
 
   .intro-footer {
@@ -2073,6 +2084,26 @@
   .finance-table td {
     padding: 0.6rem 0.7rem;
     font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .sdg-grid {
+    grid-template-columns: 1fr;
+    width: min(72%, 13.5rem);
+    max-width: 13.5rem;
+    margin-inline: auto;
+    gap: 0.75rem;
+  }
+
+  .sdg-tile {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .sdg-icon {
+    width: 100%;
+    border-radius: 10px;
   }
 }
 

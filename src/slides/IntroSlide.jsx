@@ -115,21 +115,26 @@ export function IntroSlide({ onExplore }) {
           <div className="intro-footer-block intro-sdg">
             <h2>UN SDG alignment</h2>
             <ul className="sdg-grid">
-              <li className="sdg-tile sdg-9">
-                <span className="sdg-num">09</span>
-                Industry &amp; Infrastructure
+              <li className="sdg-tile">
+                <img
+                  className="sdg-icon"
+                  src="/sdg/sdg-09.png"
+                  alt="UN SDG 9: Industry, Innovation and Infrastructure"
+                />
               </li>
-              <li className="sdg-tile sdg-11">
-                <span className="sdg-num">11</span>
-                Sustainable Cities
+              <li className="sdg-tile">
+                <img
+                  className="sdg-icon"
+                  src="/sdg/sdg-12.png"
+                  alt="UN SDG 12: Responsible Consumption and Production"
+                />
               </li>
-              <li className="sdg-tile sdg-12">
-                <span className="sdg-num">12</span>
-                Responsible Consumption
-              </li>
-              <li className="sdg-tile sdg-13">
-                <span className="sdg-num">13</span>
-                Climate Action
+              <li className="sdg-tile">
+                <img
+                  className="sdg-icon"
+                  src="/sdg/sdg-13.png"
+                  alt="UN SDG 13: Climate Action"
+                />
               </li>
             </ul>
           </div>
