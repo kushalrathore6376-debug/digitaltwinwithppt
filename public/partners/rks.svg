@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" fill="none">
+  <rect width="500" height="400" fill="#fff"/>
+  <!-- R block -->
+  <rect x="28" y="28" width="138" height="180" fill="#1a3f7a"/>
+  <text x="97" y="175" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="150" font-weight="900" fill="#fff">R</text>
+  <!-- K block -->
+  <rect x="181" y="28" width="138" height="180" fill="#1a3f7a"/>
+  <text x="250" y="175" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="150" font-weight="900" fill="#fff">K</text>
+  <!-- S block -->
+  <rect x="334" y="28" width="138" height="180" fill="#1a3f7a"/>
+  <text x="403" y="175" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="150" font-weight="900" fill="#fff">S</text>
+  <!-- ROCKSENSOR -->
+  <text x="250" y="265" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="48" font-weight="900" fill="#111" letter-spacing="2">ROCKSENSOR</text>
+  <!-- TM -->
+  <text x="440" y="252" font-family="Arial, sans-serif" font-size="14" fill="#111">™</text>
+  <!-- Tagline -->
+  <text x="250" y="310" text-anchor="middle" font-family="Georgia, serif" font-size="24" font-style="italic" fill="#1a3f7a">Sensing beyond the Vision</text>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420" fill="none">
+  <rect x="8" y="8" width="484" height="404" rx="8" stroke="#0072CE" stroke-width="3" fill="#fff"/>
+  <circle cx="250" cy="155" r="120" stroke="#0072CE" stroke-width="3" fill="none"/>
+  <circle cx="250" cy="155" r="108" stroke="#0072CE" stroke-width="1.5" fill="none"/>
+  <defs>
+    <path id="topArc" d="M 130,155 a120,120 0 0,1 240,0" fill="none"/>
+    <path id="bottomArc" d="M 370,155 a120,120 0 0,1 -240,0" fill="none"/>
+  </defs>
+  <text font-family="Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0072CE" letter-spacing="1.5">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">NATIONAL COUNCIL FOR CEMENT AND</textPath>
+  </text>
+  <text font-family="Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0072CE" letter-spacing="1.5">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">BUILDING MATERIALS</textPath>
+  </text>
+  <polygon points="250,65 310,205 190,205" stroke="#0072CE" stroke-width="2.5" fill="none"/>
+  <text x="250" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="900" fill="#0072CE">NCB</text>
+  <circle cx="250" cy="225" r="12" stroke="#0072CE" stroke-width="2" fill="none"/>
+  <circle cx="250" cy="225" r="5" fill="#0072CE"/>
+  <line x1="250" y1="237" x2="250" y2="250" stroke="#0072CE" stroke-width="2"/>
+  <text x="250" y="272" text-anchor="middle" font-family="serif" font-size="15" fill="#0072CE" font-style="italic">न हि ज्ञानेन सदृशं</text>
+  <text x="250" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0072CE">National Council for Cement</text>
+  <text x="250" y="368" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0072CE">and Building Materials</text>
+</svg>

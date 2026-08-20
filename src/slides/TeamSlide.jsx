@@ -3,25 +3,25 @@ const LEADERSHIP = [
     name: "Deependra Singh Shekhawat",
     role: "CEO",
     bio: "Extensive experience in corporate finance and global trade operations.",
-    photo: "deependra-singh-shekhawat",
+    photo: "/team/deependra-singh-shekhawat.jpeg",
   },
   {
     name: "Reetam Chaudhury",
     role: "CTO",
     bio: "Materials science and sustainability expert leading technical innovation.",
-    photo: "reetam-chaudhury",
+    photo: "/team/reetam-chaudhury.jpeg",
   },
   {
     name: "Dr. Pramod Sharma",
     role: "Chief Innovation Officer",
     bio: "Researcher & chemical expert.",
-    photo: "pramod-sharma",
+    photo: "/team/pramod-sharma.png",
   },
   {
     name: "Dr. Mainak Palit",
     role: "Chief Product Officer",
     bio: "10+ years in experimental condensed matter physics — electron microscopy, cryogenics, ultra-high vacuum systems and low-dimensional materials.",
-    photo: "mainak-palit",
+    photo: "/team/mainak-palit.jpeg",
   },
 ];
 
@@ -29,47 +29,52 @@ const MANAGEMENT = [
   {
     name: "Kirti Raj Singh Shekhawat",
     role: "Company Finances & Growth",
-    photo: "kirti-raj-singh-shekhawat",
+    photo: "/team/kirti-raj-singh-shekhawat.jpeg",
   },
   {
     name: "Hardik Abusariya",
     role: "CCU Automation & Data Management",
-    photo: "hardik-abusariya",
+    photo: "/team/hardik-abusariya.jpeg",
   },
-  { name: "Saurabh Tripathi", role: "Logistics", photo: "saurabh-tripathi" },
-  { name: "Kushal Singh Rathore", role: "CCU Development", photo: "kushal-singh-rathore" },
-  { name: "Virendra Singh", role: "Financial Operations", photo: "virendra-singh" },
+  {
+    name: "Saurabh Tripathi",
+    role: "Logistics",
+    photo: "/team/saurabh-tripathi.png",
+  },
+  {
+    name: "Kushal Singh Rathore",
+    role: "CCU Development",
+    photo: "/team/kushal-singh-rathore.jpeg",
+  },
+  {
+    name: "Virendra Singh",
+    role: "Financial Operations",
+    photo: "/team/virendra-singh.jpeg",
+  },
 ];
 
 const ADVISORY = [
   {
     name: "Dr. LP Singh",
     role: "Director General, National Council for Cement & Building Materials — Government of India, IITR",
-    photo: "lp-singh",
+    photo: "/team/lp-singh.jpeg",
   },
   {
     name: "Mr. Samrat Sengupta",
     role: "Director Technical, ProClime",
-    photo: "samrat-sengupta",
+    photo: "/team/samrat-sengupta.jpeg",
   },
   {
     name: "Lt. Col. Monish Ahuja (Retd.)",
     role: "Managing Director, PRESPL",
-    photo: "monish-ahuja",
+    photo: "/team/monish-ahuja.jpeg",
   },
 ];
 
 function TeamCard({ person }) {
   return (
     <div className="team-card">
-      <img
-        className="team-photo"
-        src={`/team/${person.photo}.png`}
-        alt={person.name}
-        onError={(e) => {
-          e.target.src = `/team/${person.photo}.jpeg`;
-        }}
-      />
+      <img className="team-photo" src={person.photo} alt={person.name} />
       <h4>{person.name}</h4>
       <p className="team-role">{person.role}</p>
       {person.bio ? <p className="team-bio">{person.bio}</p> : null}
@@ -86,7 +91,7 @@ export function TeamSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">06 / Team</p>
+          <p className="slide-eyebrow">07 / Team</p>
           <h1 className="slide-title">The people behind TraceXero</h1>
           <p className="slide-subtitle">
             Combined experience of 50+ years across finance, materials

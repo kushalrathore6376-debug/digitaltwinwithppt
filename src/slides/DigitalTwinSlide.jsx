@@ -99,7 +99,7 @@ export function DigitalTwinSlide() {
             }}
             style={{
               background:
-                "radial-gradient(ellipse 90% 75% at 55% 38%, #232c38 0%, #171b22 45%, #0e1116 100%)",
+                "radial-gradient(ellipse 90% 75% at 55% 38%, #232c38 0%, #161a21 45%, #0d1015 100%)",
               width: "100%",
               height: "100%",
               display: "block",

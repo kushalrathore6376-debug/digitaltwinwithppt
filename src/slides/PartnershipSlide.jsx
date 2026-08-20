@@ -1,5 +1,4 @@
 const FACTS = [
-
   {
     label: "Effective date",
     value: "10 Mar 2026",
@@ -17,6 +16,21 @@ const FACTS = [
   },
 ];
 
+const PARTNERS = [
+  {
+    logo: "/partners/nccbmlogo.png",
+    name: "NCCBM",
+    full: "National Council for Cement & Building Materials",
+    sub: "Govt. of India · DPIIT, Ministry of Commerce & Industry",
+  },
+  {
+    logo: "/partners/rkslogo.png",
+    name: "RKS",
+    full: "RockSensor",
+    sub: "Sensing Beyond the Vision",
+  },
+];
+
 const DOCS = [
   {
     image: "/report/pdf-page-1.png",
@@ -31,21 +45,6 @@ const DOCS = [
     label: "02",
     title: "MOU — page 1 of 7",
     caption: "Technology Development, Validation & Commercialisation Partnership",
-  },
-];
-
-const PARTNERS = [
-  {
-    name: "Rocksensor",
-    image: "/partners/rocksensor.png",
-    alt: "Rocksensor logo",
-    detail: "Sensing beyond the Vision",
-  },
-  {
-    name: "NCCBM",
-    image: "/partners/nccbm.png",
-    alt: "National Council for Cement and Building Materials logo",
-    detail: "National Council for Cement and Building Materials",
   },
 ];
 
@@ -75,7 +74,7 @@ export function PartnershipSlide() {
           </p>
         </header>
 
-        <div className="stat-strip fact-strip">
+        <div className="stat-strip">
           {FACTS.map((f) => (
             <div className="stat-tile fact-tile" key={f.label}>
               <span className="stat-label fact-eyebrow">{f.label}</span>
@@ -112,13 +111,16 @@ export function PartnershipSlide() {
         <h2 className="section-heading">Partners</h2>
         <div className="partner-grid">
           {PARTNERS.map((p) => (
-            <article className="partner-card" key={p.name}>
-              <div className="partner-logo">
-                <img src={p.image} alt={p.alt} />
+            <div className="partner-logo-card" key={p.name}>
+              <div className="partner-logo-frame">
+                <img src={p.logo} alt={`${p.name} logo`} />
               </div>
-              <h3>{p.name}</h3>
-              <p>{p.detail}</p>
-            </article>
+              <div className="partner-info">
+                <span className="partner-name">{p.name}</span>
+                <span className="partner-full">{p.full}</span>
+                <span className="partner-sub">{p.sub}</span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
