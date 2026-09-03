@@ -27,6 +27,11 @@ const LEADERSHIP = [
 
 const MANAGEMENT = [
   {
+    name: "Kushal Singh Rathore",
+    role: "CCU Development",
+    photo: "/team/kushal-singh-rathore.jpeg",
+  },
+  {
     name: "Kirti Raj Singh Shekhawat",
     role: "Company Finances & Growth",
     photo: "/team/kirti-raj-singh-shekhawat.jpeg",
@@ -40,11 +45,6 @@ const MANAGEMENT = [
     name: "Saurabh Tripathi",
     role: "Logistics",
     photo: "/team/saurabh-tripathi.png",
-  },
-  {
-    name: "Kushal Singh Rathore",
-    role: "CCU Development",
-    photo: "/team/kushal-singh-rathore.jpeg",
   },
   {
     name: "Virendra Singh",

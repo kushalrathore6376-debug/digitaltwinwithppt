@@ -1,26 +1,26 @@
 const STATS = [
-  { value: "100 kg", label: "CO₂ processed per day, pilot scale" },
-  { value: "2 kg", label: "High-grade graphene produced per day" },
-  { value: "60%", label: "Lower capture cost vs. international competitors" },
-  { value: "0%", label: "Waste stream — full carbon utilisation" },
+  { value: "100 kg", label: "CO₂ processing / day commercial pilot" },
+  { value: "~20 kg", label: "High-Purity Nano-Graphite" },
+  { value: "~60%", label: "Lower capture cost vs. international competitors" },
+  { value: "0%", label: "Waste stream — complete carbon utilisation" },
+  {value:"50 Kg", label: "Pure Oxygen stream-directly usable in the industries"},
+  {value:">2Kg", label: "Industrial grade to highend Graphene"},
+  {value:"1 Carbon credit", label: "In every 10 days at the smallest commercial scale"},
+  {value:"Worlds 1ST", label: "Technology breaking CO₂ Apart under ambient conditions"},
+
+
+
 ];
 
 const PRODUCTS = [
-  {
-    name: "Graphene",
-    image: "/products/graphene.png",
-    alt: "Hexagonal graphene lattice",
-    body:
-      "The primary revenue driver. Captured carbon is exfoliated by probe-sonication into 100–200 nm graphene nanosheets, sold across the 5,000–40,000 ₹/kg price spectrum.",
-    tags: ["Paint & coatings", "Composites & polymers", "Batteries", "Solar cells", "Supercapacitors"],
-  },
+  
   {
     name: "Graphitic carbon",
     image: "/products/graphite-flakes-500x500.jpg",
     alt: "Layered graphite flakes",
     body:
       "Decomposed directly from flue-gas CO₂ and confirmed by XRD, XPS and Raman analysis. The residual fraction after graphene extraction — still a saleable material in its own right.",
-    tags: ["Coatings", "Batteries", "Construction additives", "Metallurgy"],
+    tags: ["Electros", "Batteries", "Automotive", "Metallurgy"],
   },
   {
     name: "Oxygen",
@@ -30,13 +30,21 @@ const PRODUCTS = [
       "Recovered as a clean by-product of the same decomposition reaction that yields carbon — no hazardous waste, and a second stream of value from every kilogram of CO₂ processed.",
     tags: ["Improved air quality", "Industrial combustion", "Heat recovery", "Reduced fuel burn"],
   },
+  {
+    name: "Graphene",
+    image: "/products/graphene.png",
+    alt: "Hexagonal graphene lattice",
+    body:
+      "The primary revenue driver. Captured carbon is exfoliated by probe-sonication into 100–200 nm graphene nanosheets, sold across the 5,000–40,000 ₹/kg price spectrum.",
+    tags: ["Paint & coatings", "Composites & polymers", "Batteries", "Solar cells", "Supercapacitors"],
+  }
 ];
 
 const FINANCE_STATS = [
   { value: "₹3.5 Cr", label: "CAPEX — full facility setup & commissioning" },
   { value: "₹1.5 Cr", label: "Annual plant opex" },
   { value: "₹13.74 Cr", label: "Annual revenue, single 100 kg/day plant" },
-  { value: "₹10.24 Cr", label: "Projected EBITDA — ~75% gross margin" },
+  // { value: "₹10.24 Cr", label: "Projected EBITDA — ~75% gross margin" },
 ];
 
 const REVENUE_ROWS = [
@@ -59,7 +67,7 @@ export function ProductsSlide() {
           <h1 className="slide-title">From captured carbon to commercial product</h1>
           <p className="slide-subtitle">
             Our decomposition process doesn't just capture carbon emissions —
-            it splits it into three saleable outputs, each with its own
+            it splits it into three sellable outputs, each with its own
             market and price point.
           </p>
         </header>
