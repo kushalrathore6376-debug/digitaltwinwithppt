@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./presentation.css";
 import { IntroSlide } from "./slides/IntroSlide.jsx";
 import { DigitalTwinSlide } from "./slides/DigitalTwinSlide.jsx";
@@ -22,6 +22,37 @@ const SLIDES = [
   { id: "team", label: "Team" },
 ];
 
+// On phones, show the previous step, the current one, and the next —
+// a three-chip window that slides as you move, so the strip never
+// overflows or needs a scrollbar.
+const MOBILE_NAV_WINDOW = 3;
+
+function useIsMobileNav() {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= 900
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 900px)");
+    const update = (e) => setMobile(e.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return mobile;
+}
+
+function visibleNavIndices(index, count, windowSize) {
+  if (windowSize >= count) {
+    return Array.from({ length: count }, (_, i) => i);
+  }
+  // Center on the current slide when possible: prev | current | next.
+  // Near the ends the window clamps so it still fills three chips.
+  const half = Math.floor(windowSize / 2);
+  let start = index - half;
+  if (start < 0) start = 0;
+  if (start + windowSize > count) start = count - windowSize;
+  return Array.from({ length: windowSize }, (_, i) => start + i);
+}
+
 // A lightweight PPT-style shell: a persistent nav bar (so its controls never
 // have to fight the digital twin's own on-canvas overlay for screen space)
 // and a horizontal carousel of full-height slides underneath it. Navigation
@@ -31,6 +62,7 @@ const SLIDES = [
 export default function Presentation() {
   const [index, setIndex] = useState(0);
   const count = SLIDES.length;
+  const mobileNav = useIsMobileNav();
 
   const goTo = useCallback(
     (next) =>
@@ -48,6 +80,14 @@ export default function Presentation() {
         return clamped;
       }),
     [count]
+  );
+
+  const navIndices = useMemo(
+    () =>
+      mobileNav
+        ? visibleNavIndices(index, count, MOBILE_NAV_WINDOW)
+        : Array.from({ length: count }, (_, i) => i),
+    [mobileNav, index, count]
   );
 
   useEffect(() => {
@@ -106,20 +146,26 @@ export default function Presentation() {
           </span>
         </button>
 
-        <ol className="nav-dots">
-          {SLIDES.map((s, i) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                className={`nav-dot${i === index ? " current" : ""}`}
-                onClick={() => goTo(i)}
-                aria-current={i === index ? "step" : undefined}
-              >
-                <span className="nav-dot-index">{String(i + 1).padStart(2, "0")}</span>
-                <span className="nav-dot-label">{s.label}</span>
-              </button>
-            </li>
-          ))}
+        <ol className={`nav-dots${mobileNav ? " nav-dots-window" : ""}`}>
+          {navIndices.map((i) => {
+            const s = SLIDES[i];
+            return (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  className={`nav-dot${i === index ? " current" : ""}`}
+                  onClick={() => goTo(i)}
+                  aria-current={i === index ? "step" : undefined}
+                  aria-label={`Slide ${i + 1}: ${s.label}`}
+                >
+                  <span className="nav-dot-index">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="nav-dot-label">{s.label}</span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
 
         <div className="nav-arrows">
