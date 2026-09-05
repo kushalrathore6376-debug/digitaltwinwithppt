@@ -51,9 +51,7 @@ export function IntroSlide({ onExplore }) {
         </div>
 
         <p className="intro-eyebrow">
-          India's first carbon-capture-to-graphene technology
-        </p>
-
+        India's first carbon-capture-to-graphite technology</p>
         <h1 className="intro-headline">
           Achieve <span className="hl-green">net-zero</span> emissions with{" "}
           <span className="hl-orange">Trace</span>
