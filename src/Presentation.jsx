@@ -203,7 +203,7 @@ export default function Presentation() {
           }}
         >
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-            <IntroSlide onExplore={() => goTo(1)} />
+            <IntroSlide onExplore={() => goTo(2)} />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
           <USPSlide />
