@@ -13,9 +13,9 @@ import { useSimStore } from "./store.js";
 
 const SLIDES = [
   { id: "intro", label: "Intro" },
+  { id: "usp", label: "USP" },
   { id: "twin", label: "Digital twin" },
   { id: "products", label: "Products" },
-  { id: "usp", label: "USP" },
   { id: "scaleup", label: "Scale-up" },
   { id: "partnership", label: "Partnership" },
   { id: "our-trials", label: "Our Trials" },
@@ -206,13 +206,13 @@ export default function Presentation() {
             <IntroSlide onExplore={() => goTo(1)} />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-            <DigitalTwinSlide />
+          <USPSlide />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-            <ProductsSlide />
+          <DigitalTwinSlide />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-            <USPSlide />
+          <ProductsSlide />
           </div>
           <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
             <ScaleupSlide />
