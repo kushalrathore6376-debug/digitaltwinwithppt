@@ -1182,8 +1182,15 @@
 
 .doc-card {
   position: relative;
+  display: block;
+  width: 100%;
   margin: 0;
   min-width: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.9), transparent 50%),
     linear-gradient(165deg, var(--card-bg), var(--bg-2));
@@ -1293,6 +1300,107 @@
   font-size: 0.74rem;
   line-height: 1.4;
   color: var(--text-dim);
+}
+
+/* Document enlarge preview */
+.doc-lightbox {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(18, 16, 14, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: zoom-out;
+}
+
+.doc-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.doc-lightbox-close:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.doc-lightbox-figure {
+  margin: 0;
+  max-width: min(720px, 100%);
+  max-height: calc(100% - 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: default;
+}
+
+.doc-lightbox-figure img {
+  display: block;
+  width: 100%;
+  max-height: calc(100dvh - 10rem);
+  height: auto;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.doc-lightbox-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0 0.25rem;
+  color: #faf8f3;
+}
+
+.doc-lightbox-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.doc-lightbox-sub {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .doc-lightbox {
+    padding: 0.85rem;
+  }
+
+  .doc-lightbox-close {
+    top: 0.7rem;
+    right: 0.7rem;
+    width: 38px;
+    height: 38px;
+  }
+
+  .doc-lightbox-figure img {
+    max-height: calc(100dvh - 9rem);
+  }
 }
 
 /* ---- partner logo cards --------------------------------------------------- */

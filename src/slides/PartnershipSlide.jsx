@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const FACTS = [
   {
     label: "Effective date",
@@ -43,7 +45,7 @@ const DOCS = [
     image: "/report/pdf-page-2.png",
     alt: "First page of the NCB–TraceXero memorandum of understanding",
     label: "02",
-    title: "MOU — page 1 of 7",
+    title: "MOU",
     caption: "Technology Development, Validation & Commercialisation Partnership",
   },
 ];
@@ -53,6 +55,17 @@ const DOCS = [
 // as premium "document" cards rather than a flat embed, so the legal
 // paper reads as evidence, not filler.
 export function PartnershipSlide() {
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setPreview(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+
   return (
     <div className="slide partnership-slide">
       <div className="slide-ambient" aria-hidden="true">
@@ -87,7 +100,13 @@ export function PartnershipSlide() {
         <h2 className="section-heading">The MOU</h2>
         <div className="doc-grid">
           {DOCS.map((d) => (
-            <figure className="doc-card" key={d.label}>
+            <button
+              type="button"
+              className="doc-card"
+              key={d.label}
+              onClick={() => setPreview(d)}
+              aria-label={`View ${d.title} full size`}
+            >
               <span className="doc-badge">
                 <span className="doc-badge-check" aria-hidden="true">
                   ✓
@@ -100,11 +119,11 @@ export function PartnershipSlide() {
                 </span>
                 <img src={d.image} alt={d.alt} loading="lazy" />
               </div>
-              <figcaption className="doc-caption">
+              <span className="doc-caption">
                 <span className="doc-caption-title">{d.title}</span>
                 <span className="doc-caption-sub">{d.caption}</span>
-              </figcaption>
-            </figure>
+              </span>
+            </button>
           ))}
         </div>
 
@@ -124,6 +143,35 @@ export function PartnershipSlide() {
           ))}
         </div>
       </div>
+
+      {preview && (
+        <div
+          className="doc-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={preview.title}
+          onClick={() => setPreview(null)}
+        >
+          <button
+            type="button"
+            className="doc-lightbox-close"
+            onClick={() => setPreview(null)}
+            aria-label="Close preview"
+          >
+            ×
+          </button>
+          <figure
+            className="doc-lightbox-figure"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img src={preview.image} alt={preview.alt} />
+            <figcaption className="doc-lightbox-caption">
+              <span className="doc-lightbox-title">{preview.title}</span>
+              <span className="doc-lightbox-sub">{preview.caption}</span>
+            </figcaption>
+          </figure>
+        </div>
+      )}
     </div>
   );
 }
