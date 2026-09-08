@@ -61,7 +61,7 @@ export function PartnershipSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">05 / Strategic Partnership</p>
+          <p className="slide-eyebrow">06 / Strategic Partnership</p>
           <h1 className="slide-title">
             Validated by India&rsquo;s apex cement research body
           </h1>

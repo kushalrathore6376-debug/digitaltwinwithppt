@@ -56,7 +56,7 @@ export function ScaleupSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">04 / Plant Scale-Up</p>
+          <p className="slide-eyebrow">05 / Plant Scale-Up</p>
           <h1 className="slide-title">
             From pilot to 100 TPD — five phases, each a 10&times; leap
           </h1>

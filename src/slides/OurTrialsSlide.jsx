@@ -125,7 +125,7 @@ export function OurTrialsSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">06 / Our Trials</p>
+          <p className="slide-eyebrow">07 / Our Trials</p>
           <h1 className="slide-title">CO₂ absorption validation trials</h1>
           <p className="slide-subtitle">
             In July &amp; August, three validation trials were performed at

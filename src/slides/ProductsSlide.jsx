@@ -63,7 +63,7 @@ export function ProductsSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">03 / Products</p>
+          <p className="slide-eyebrow">04 / Products</p>
           <h1 className="slide-title">From captured carbon to commercial product</h1>
           <p className="slide-subtitle">
             Our decomposition process doesn't just capture carbon emissions —

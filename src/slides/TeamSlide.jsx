@@ -91,7 +91,7 @@ export function TeamSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">07 / Team</p>
+          <p className="slide-eyebrow">08 / Team</p>
           <h1 className="slide-title">The people behind TraceXero</h1>
           <p className="slide-subtitle">
             Combined experience of 50+ years across finance, materials

@@ -55,7 +55,7 @@ export function USPSlide() {
       </div>
       <div className="slide-scroll">
         <header className="slide-header">
-          <p className="slide-eyebrow">04 / Our USP</p>
+          <p className="slide-eyebrow">02 / Our USP</p>
           <h1 className="slide-title">
             Carbon capture that pays for itself{" "}
             <span className="usp-highlight">before a single carbon credit is sold.</span>
