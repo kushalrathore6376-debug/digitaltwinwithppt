@@ -76,10 +76,10 @@ export function PartnershipSlide() {
         <header className="slide-header">
           <p className="slide-eyebrow">06 / Strategic Partnership</p>
           <h1 className="slide-title">
-            Validated by India&rsquo;s apex cement research body
+            Validated by India&rsquo;s apex Cement Research Body - <span className="hl-orange">National Council for Cement and Building Materials</span>
           </h1>
           <p className="slide-subtitle">
-            TraceXero&rsquo;s carbon capture technology is being developed,
+            TraceXero&rsquo;s Carbon Capture Technology is being developed,
             validated and commercialised under a formal MOU with NCB — the
             Government of India&rsquo;s premier R&amp;D institute for
             cement and building materials, under DPIIT, Ministry of
