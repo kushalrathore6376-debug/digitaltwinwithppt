@@ -18,16 +18,51 @@ const STEPS = [
     desc: "The graphite is processed further into rGO, carbon nanotubes, graphene oxide and graphene coatings \u2014 stacking margin on top of margin from one ton of carbon.",
   },
 ];
+const OUTPUTS = [
+  {
+    color: "#F07818",
+    title: "Graphite",
+    badge: "PRIMARY",
+    desc: "95%-graphitic solid decomposed directly from captured CO\u2082 \u2014 the primary product, sold before any credit is issued.",
+  },
+  {
+    color: "#0072CE",
+    title: "Oxygen",
+    badge: "CO-PRODUCT",
+    desc: "Released as a co-product of decomposition \u2014 a second buyer on the same reaction, at zero extra capture cost.",
+  },
+  {
+    color: "#128A08",
+    title: "Graphene",
+    badge: "UPGRADE",
+    desc: "Graphite upgraded into rGO, CNTs, graphene oxide & coatings \u2014 the same ton of carbon monetized more than once.",
+  },
+  {
+    color: "#6E675E",
+    title: "Carbon Credits",
+    badge: "BONUS",
+    desc: "9 credits per ton graphite.",
+  },
+];
 
 const STATS = [
   { value: "100 kg", label: "CO\u2082 processing / day commercial pilot" },
   { value: "~20 kg", label: "High-Purity Nano-Graphite" },
   { value: "~60%", label: "Lower capture cost vs. international competitors" },
   { value: "0%", label: "Waste stream \u2014 complete carbon utilisation" },
-  { value: "50 Kg", label: "Pure Oxygen stream \u2014 directly usable in industries" },
+  {
+    value: "50 Kg",
+    label: "Pure Oxygen stream \u2014 directly usable in industries",
+  },
   { value: ">2Kg", label: "Industrial grade to high-end Graphene" },
-  { value: "1 credit", label: "Carbon credit every 10 days at smallest commercial scale" },
-  { value: "World\u2019s 1ST", label: "Technology breaking CO\u2082 apart under ambient conditions" },
+  {
+    value: "1 credit",
+    label: "Carbon credit every 10 days at smallest commercial scale",
+  },
+  {
+    value: "World\u2019s 1ST",
+    label: "Technology breaking CO\u2082 apart under ambient conditions",
+  },
 ];
 
 const PRODUCTS = [
@@ -43,19 +78,33 @@ const PRODUCTS = [
     image: "/products/oxygen.png",
     alt: "Glowing O2 molecule",
     body: "Recovered as a clean by-product of the same decomposition reaction that yields carbon \u2014 no hazardous waste, and a second stream of value from every kilogram of CO\u2082 processed.",
-    tags: ["Improved air quality", "Industrial combustion", "Heat recovery", "Reduced fuel burn"],
+    tags: [
+      "Improved air quality",
+      "Industrial combustion",
+      "Heat recovery",
+      "Reduced fuel burn",
+    ],
   },
   {
     name: "Graphene",
     image: "/products/graphene.png",
     alt: "Hexagonal graphene lattice",
     body: "The primary revenue driver. Captured carbon is exfoliated by probe-sonication into 100\u2013200 nm graphene nanosheets, sold across the 5,000\u201340,000 \u20B9/kg price spectrum.",
-    tags: ["Paint & coatings", "Composites & polymers", "Batteries", "Solar cells", "Supercapacitors"],
+    tags: [
+      "Paint & coatings",
+      "Composites & polymers",
+      "Batteries",
+      "Solar cells",
+      "Supercapacitors",
+    ],
   },
 ];
 
 const FINANCE_STATS = [
-  { value: "\u20B93.5 Cr", label: "CAPEX \u2014 full facility setup & commissioning" },
+  {
+    value: "\u20B93.5 Cr",
+    label: "CAPEX \u2014 full facility setup & commissioning",
+  },
   { value: "\u20B91.5 Cr", label: "Annual plant opex" },
   { value: "\u20B913.74 Cr", label: "Annual revenue, single 100 kg/day plant" },
 ];
@@ -104,10 +153,34 @@ export function ProductsSlide() {
               {i < STEPS.length - 1 && (
                 <div className="usp-pipeline-arrow" aria-hidden="true">
                   <svg width="40" height="24" viewBox="0 0 40 24" fill="none">
-                    <path d="M0 12h32M26 5l8 7-8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M0 12h32M26 5l8 7-8 7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+        <div className="usp-divider" aria-hidden="true">
+          <span className="usp-divider-label">OUTPUTS</span>
+        </div>
+
+        <div className="usp-outputs">
+          {OUTPUTS.map((o) => (
+            <div
+              className="usp-output-card"
+              key={o.title}
+              style={{ "--card-accent": o.color }}
+            >
+              <div className="usp-output-accent" aria-hidden="true" />
+              <span className="usp-output-badge">{o.badge}</span>
+              <h4 className="usp-output-title">{o.title}</h4>
+              <p className="usp-output-desc">{o.desc}</p>
             </div>
           ))}
         </div>
