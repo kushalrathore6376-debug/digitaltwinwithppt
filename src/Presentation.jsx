@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./presentation.css";
 import { IntroSlide } from "./slides/IntroSlide.jsx";
+import { TheProblemSlide } from "./slides/TheProblemSlide.jsx";
 import { DigitalTwinSlide } from "./slides/DigitalTwinSlide.jsx";
 import { ProductsSlide } from "./slides/ProductsSlide.jsx";
-import { USPSlide } from "./slides/USPSlide.jsx";
 import { ScaleupSlide } from "./slides/ScaleupSlide.jsx";
 import { PartnershipSlide } from "./slides/PartnershipSlide.jsx";
 import { OurTrialsSlide } from "./slides/OurTrialsSlide.jsx";
@@ -13,9 +13,9 @@ import { useSimStore } from "./store.js";
 
 const SLIDES = [
   { id: "intro", label: "Intro" },
-  { id: "usp", label: "USP" },
+  { id: "problem", label: "The Problem" },
+  { id: "usp-products", label: "USPs & Products" },
   { id: "twin", label: "Digital twin" },
-  { id: "products", label: "Products" },
   { id: "scaleup", label: "Scale-up" },
   { id: "partnership", label: "Partnership" },
   { id: "our-trials", label: "Our Trials" },
@@ -29,7 +29,7 @@ const MOBILE_NAV_WINDOW = 3;
 
 function useIsMobileNav() {
   const [mobile, setMobile] = useState(
-    () => typeof window !== "undefined" && window.innerWidth <= 900
+    () => typeof window !== "undefined" && window.innerWidth <= 900,
   );
   useEffect(() => {
     const query = window.matchMedia("(max-width: 900px)");
@@ -79,7 +79,7 @@ export default function Presentation() {
         window.setTimeout(() => window.dispatchEvent(new Event("resize")), 700);
         return clamped;
       }),
-    [count]
+    [count],
   );
 
   const navIndices = useMemo(
@@ -87,7 +87,7 @@ export default function Presentation() {
       mobileNav
         ? visibleNavIndices(index, count, MOBILE_NAV_WINDOW)
         : Array.from({ length: count }, (_, i) => i),
-    [mobileNav, index, count]
+    [mobileNav, index, count],
   );
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function Presentation() {
   // change or navigation ever firing.
   useEffect(() => {
     const timers = [200, 800, 2000].map((ms) =>
-      window.setTimeout(() => window.dispatchEvent(new Event("resize")), ms)
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), ms),
     );
     return () => timers.forEach(window.clearTimeout);
   }, []);
@@ -202,28 +202,53 @@ export default function Presentation() {
             transform: `translateX(-${index * (100 / count)}%)`,
           }}
         >
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
             <IntroSlide onExplore={() => goTo(2)} />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-          <USPSlide />
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
+            <TheProblemSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-          <DigitalTwinSlide />
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
+            <ProductsSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
-          <ProductsSlide />
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
+            <DigitalTwinSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
             <ScaleupSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
             <PartnershipSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
             <OurTrialsSlide />
           </div>
-          <div className="presentation-slot" style={{ width: `${100 / count}%` }}>
+         
+          <div
+            className="presentation-slot"
+            style={{ width: `${100 / count}%` }}
+          >
             <TeamSlide />
           </div>
         </div>
